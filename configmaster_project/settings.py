@@ -13,6 +13,11 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
+# Custom settings
+
+PWSAFE_EXPORT_URL = "https://pwsafe.continum.net/pwsafe/configmaster_export"
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
@@ -36,6 +41,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'configmaster',
+    'south'
 )
 
 MIDDLEWARE_CLASSES = (
