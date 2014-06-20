@@ -1,5 +1,5 @@
 from django.contrib import admin
-from configmaster.models import DeviceType, DeviceGroup, Report
+from configmaster.models import DeviceType, DeviceGroup, Report, Credential
 from configmaster.models import Device
 
 
@@ -38,7 +38,22 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ("result",)
 
 
+class CredentialAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': ('description', 'type',),
+        }),
+        ('Plaintext login', {
+            'fields': ('username', 'password'),
+        }),
+        ("SSH login", {
+            'fields': ('path',)
+        })
+    )
+
+
 admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType)
 admin.site.register(DeviceGroup)
+admin.site.register(Credential, CredentialAdmin)
 admin.site.register(Report, ReportAdmin)
