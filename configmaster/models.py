@@ -1,9 +1,35 @@
 from django.db import models
 
 
+class Credential(models.Model):
+    TYPE_PLAINTEXT = 1
+    TYPE_SSH = 2
+
+    TYPE_CHOICES = (
+        (TYPE_PLAINTEXT, "Plain text username/password combination"),
+        (TYPE_SSH, "Path to a SSH public/private key pair")
+    )
+
+    type = models.IntegerField(choices=TYPE_CHOICES)
+
+    description = models.CharField(max_length=100)
+
+    username = models.CharField(max_length=100, null=True, blank=True)
+    password = models.CharField(max_length=100, null=True, blank=True)
+
+    path = models.CharField(max_length=300, null=True, blank=True)
+
+
+    def __unicode__(self):
+        return self.description
+
+
 class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
+
+    credential = models.ForeignKey(Credential, help_text="Default credential for this device group", null=True,
+                                   blank=True)
 
     def __unicode__(self):
         return self.name
@@ -24,9 +50,11 @@ class Device(models.Model):
 
     enabled = models.BooleanField("Config management enabled", default=True)
     sync = models.BooleanField("Synchronized with PWSafe", default=True, help_text="Disabling this flag does not "
-                                                                              "disable the synchronization for this "
-                                                                              "device. Certain fields cannot be "
-                                                                              "edited if this flag is set.")
+                                                                                   "disable the synchronization for this "
+                                                                                   "device. Certain fields cannot be "
+                                                                                   "edited if this flag is set.")
+
+    credential = models.ForeignKey(Credential, help_text="Overrides group default.", null=True, blank=True)
 
     group = models.ForeignKey(DeviceGroup, null=True, blank=True)
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
@@ -55,18 +83,3 @@ class Report(models.Model):
     output = models.TextField(editable=False)
 
 
-class Credential(models.Model):
-    TYPE_PLAINTEXT = 1
-    TYPE_SSH = 2
-
-    TYPE_CHOICES = (
-        (TYPE_PLAINTEXT, "Plain text username/password combination"),
-        (TYPE_SSH, "Path to a SSH public/private key pair")
-    )
-
-    description = models.CharField(max_length=100)
-
-    username = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)
-
-    path = models.CharField(max_length=300)
