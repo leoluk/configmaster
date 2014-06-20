@@ -53,3 +53,20 @@ class Report(models.Model):
 
     result = models.IntegerField(choices=RESULT_CHOICES, editable=False)
     output = models.TextField(editable=False)
+
+
+class Credential(models.Model):
+    TYPE_PLAINTEXT = 1
+    TYPE_SSH = 2
+
+    TYPE_CHOICES = (
+        (TYPE_PLAINTEXT, "Plain text username/password combination"),
+        (TYPE_SSH, "Path to a SSH public/private key pair")
+    )
+
+    description = models.CharField(max_length=100)
+
+    username = models.CharField(max_length=100)
+    password = models.CharField(max_length=100)
+
+    path = models.CharField(max_length=300)

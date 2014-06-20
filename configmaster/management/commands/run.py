@@ -45,7 +45,3 @@ class Command(BaseCommand):
             report.result = result
             report.output = output
             report.save()
-
-
-
-
