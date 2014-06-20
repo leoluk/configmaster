@@ -33,7 +33,7 @@ class DeviceGroup(models.Model):
         return self.name
 
 
-class DeviceHandler(models.Model):
+class Task(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default="")
     class_name = models.CharField(max_length=100)
@@ -44,7 +44,7 @@ class DeviceHandler(models.Model):
 
 class DeviceType(models.Model):
     name = models.CharField(max_length=100)
-    handler = models.ManyToManyField(DeviceHandler, null=True, blank=True)
+    tasks = models.ManyToManyField(Task, null=True, blank=True)
 
     credential = models.ForeignKey(Credential, help_text="Default credential for this device type", null=True,
                                    blank=True)
@@ -78,7 +78,7 @@ class Device(models.Model):
 
 class Report(models.Model):
     device = models.ForeignKey(Device, editable=False)
-    handler = models.ForeignKey(DeviceHandler, editable=False)
+    task = models.ForeignKey(Task, editable=False)
     date = models.DateTimeField(auto_now=True)
 
     RESULT_SUCCESS = 0

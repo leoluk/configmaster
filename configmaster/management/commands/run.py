@@ -22,13 +22,13 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("Processing %s..." % device.label)
 
-                for handler in device.device_type.handler.all():
+                for task in device.device_type.tasks.all():
                     try:
-                        if RE_MATCH_SINGLE_WORD.match(handler.class_name):
-                            handler_obj = getattr(handlers, handler.class_name)(device)
+                        if RE_MATCH_SINGLE_WORD.match(task.class_name):
+                            handler_obj = getattr(handlers, task.class_name)(device)
                             result, output = handler_obj.run()
-                        elif not handler.class_name:
-                            raise ValueError("Empty handler")
+                        elif not task.class_name:
+                            raise ValueError("Empty class name")
                         else:
                             raise ValueError("Invalid class name: %s" % device.device_type.handler)
 
@@ -37,13 +37,13 @@ class Command(BaseCommand):
                         output = traceback.format_exc()
 
                     if result == Report.RESULT_FAILURE:
-                        self.stderr.write("Device %s, handler %s failed: %s" % (device.label, handler.name, output))
+                        self.stderr.write("Device %s, task %s failed: %s" % (device.label, task.name, output))
                     else:
-                        self.stdout.write("Device %s, handler %s succeeded" % (device.label, handler.name))
+                        self.stdout.write("Device %s, task %s succeeded" % (device.label, task.name))
 
                     report = Report()
                     report.device = device
                     report.result = result
-                    report.handler = handler
+                    report.task = task
                     report.output = output
                     report.save()
