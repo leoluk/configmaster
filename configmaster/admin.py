@@ -1,5 +1,5 @@
 from django.contrib import admin
-from configmaster.models import DeviceType, DeviceGroup
+from configmaster.models import DeviceType, DeviceGroup, Report
 from configmaster.models import Device
 
 
@@ -32,6 +32,13 @@ class DeviceAdmin(admin.ModelAdmin):
         return fields
 
 
+class ReportAdmin(admin.ModelAdmin):
+    readonly_fields = ("device", "date", "result", "output")
+    list_display = ("date", "device", "result")
+    list_filter = ("result",)
+
+
 admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType)
 admin.site.register(DeviceGroup)
+admin.site.register(Report, ReportAdmin)

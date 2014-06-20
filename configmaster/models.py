@@ -37,3 +37,19 @@ class Device(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class Report(models.Model):
+    device = models.ForeignKey(Device, editable=False)
+    date = models.DateTimeField(auto_now=True)
+
+    RESULT_SUCCESS = 0
+    RESULT_FAILURE = 1
+
+    RESULT_CHOICES = (
+        (RESULT_SUCCESS, "Success"),
+        (RESULT_FAILURE, "Failure")
+    )
+
+    result = models.IntegerField(choices=RESULT_CHOICES, editable=False)
+    output = models.TextField(editable=False)
