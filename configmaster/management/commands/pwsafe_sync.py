@@ -12,8 +12,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('filename', default="", help="Read from file instead of remote server")
 
-    def fetch_pwsafe_data(self):
-        resp = requests.get(settings.PWSAFE_EXPORT_URL)
+    def fetch_pwsafe_data(self, url=settings.PWSAFE_EXPORT_URL):
+        resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
         else:
