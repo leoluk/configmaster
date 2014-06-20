@@ -28,8 +28,15 @@ class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
 
-    credential = models.ForeignKey(Credential, help_text="Default credential for this device group", null=True,
-                                   blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class DeviceHandler(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default="")
+    class_name = models.CharField(max_length=100)
 
     def __unicode__(self):
         return self.name
@@ -37,8 +44,10 @@ class DeviceGroup(models.Model):
 
 class DeviceType(models.Model):
     name = models.CharField(max_length=100)
-    handler = models.CharField("Device handler class", max_length=100, blank=True)
+    handler = models.ManyToManyField(DeviceHandler, null=True, blank=True)
 
+    credential = models.ForeignKey(Credential, help_text="Default credential for this device type", null=True,
+                                   blank=True)
     def __unicode__(self):
         return self.name
 
@@ -69,6 +78,7 @@ class Device(models.Model):
 
 class Report(models.Model):
     device = models.ForeignKey(Device, editable=False)
+    handler = models.ForeignKey(DeviceHandler, editable=False)
     date = models.DateTimeField(auto_now=True)
 
     RESULT_SUCCESS = 0

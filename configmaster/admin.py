@@ -1,5 +1,5 @@
 from django.contrib import admin
-from configmaster.models import DeviceType, DeviceGroup, Report, Credential
+from configmaster.models import DeviceType, DeviceGroup, Report, Credential, DeviceHandler
 from configmaster.models import Device
 
 
@@ -12,8 +12,8 @@ class DeviceAdmin(admin.ModelAdmin):
         ("Basic info", {
             'fields': ('name', 'label', 'group', 'device_type')
         }),
-        ("Flags", {
-            'fields': ('enabled', 'sync')
+        ("Settings", {
+            'fields': ('enabled', 'sync', 'credential')
         }),
         ('Config management data', {
             'description': "Will get overwritten during the next run.",
@@ -33,8 +33,8 @@ class DeviceAdmin(admin.ModelAdmin):
 
 
 class ReportAdmin(admin.ModelAdmin):
-    readonly_fields = ("device", "date", "result", "output")
-    list_display = ("date", "device", "result")
+    readonly_fields = ("device", "date", "handler", "result", "output")
+    list_display = ("date", "device", "handler", "result")
     list_filter = ("result",)
 
 
@@ -55,5 +55,6 @@ class CredentialAdmin(admin.ModelAdmin):
 admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType)
 admin.site.register(DeviceGroup)
+admin.site.register(DeviceHandler)
 admin.site.register(Credential, CredentialAdmin)
 admin.site.register(Report, ReportAdmin)
