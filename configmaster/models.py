@@ -24,6 +24,14 @@ class Credential(models.Model):
         return self.description
 
 
+class ConnectionSetting(models.Model):
+    name = models.CharField(max_length=100)
+    ssh_port = models.IntegerField(verbose_name="SSH port")
+
+    def __unicode__(self):
+        return "{} (SSH: port {})".format(self.name, self.ssh_port)
+
+
 class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
@@ -46,6 +54,7 @@ class DeviceType(models.Model):
     name = models.CharField(max_length=100)
     tasks = models.ManyToManyField(Task, null=True, blank=True)
 
+    connection_setting = models.ForeignKey(ConnectionSetting, null=True, blank=True)
     credential = models.ForeignKey(Credential, help_text="Default credential for this device type", null=True,
                                    blank=True)
     def __unicode__(self):
