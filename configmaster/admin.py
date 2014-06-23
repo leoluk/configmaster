@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task, ConnectionSetting
 from configmaster.models import Device
 
@@ -38,18 +39,44 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ("result",)
 
 
+class CredentialAdminForm(forms.ModelForm):
+    class Meta:
+        model = Credential
+
+    new_password = forms.CharField(required=False,
+                                   label="Set password",
+                                   help_text="Set new password for this entry. "
+                                             "Leave empty to keep existing password.",
+                                   widget=forms.TextInput(
+                                       attrs={'class': 'vTextField'}))
+
+
 class CredentialAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': ('description', 'type',),
         }),
         ('Plaintext login', {
-            'fields': ('username', 'password'),
+            'fields': ('username', 'new_password'),
         }),
         ("SSH login", {
             'fields': ('path',)
         })
     )
+
+    form = CredentialAdminForm
+
+    list_display = ("description", "type", "username", "path")
+    list_filter = ("type", )
+
+    def save_model(self, request, obj, form, change):
+        new_password = form.cleaned_data['new_password']
+
+        # Ignore passwords consisting only of whitespace (prevent accidental overwrite).
+        if len(new_password.strip()):
+            obj.password = new_password
+
+        obj.save()
 
 
 admin.site.register(Device, DeviceAdmin)
