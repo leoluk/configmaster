@@ -13,7 +13,7 @@ class DeviceAdmin(admin.ModelAdmin):
             'fields': ('name', 'label', 'group', 'device_type')
         }),
         ("Settings", {
-            'fields': ('enabled', 'sync', 'credential')
+            'fields': ('enabled', 'sync', 'credential', 'ssh_known_host')
         }),
         ('Config management data', {
             'description': "Will get overwritten during the next run.",
