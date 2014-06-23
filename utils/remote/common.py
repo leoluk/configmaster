@@ -82,7 +82,7 @@ class SSHRemoteControl(BaseRemoteControl):
             sock.connect((self.hostname, self.port))
             return paramiko.Transport(sock)
         except (paramiko.SSHException, socket.timeout), e:
-            raise ConnectionError("SSH socket failed: %s" % e.message)
+            raise ConnectionError("SSH socket failed: %s" % str(e))
 
     def connect(self, username, password):
         self.username = username
