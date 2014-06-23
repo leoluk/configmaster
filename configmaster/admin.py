@@ -1,5 +1,5 @@
 from django.contrib import admin
-from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task
+from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task, ConnectionSetting
 from configmaster.models import Device
 
 
@@ -56,5 +56,6 @@ admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType)
 admin.site.register(DeviceGroup)
 admin.site.register(Task)
+admin.site.register(ConnectionSetting)
 admin.site.register(Credential, CredentialAdmin)
 admin.site.register(Report, ReportAdmin)
