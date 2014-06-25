@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from django.conf import settings
 import os
 from paramiko import SSHException
+from scp import SCPException
 import socket
 import tempfile
 
@@ -112,7 +113,13 @@ class FirewallConfigBackupHandler(FirewallHandler):
         temp_filename = os.path.join(temp_dir, destination_file)
         filename = os.path.join(settings.TASK_FW_CONFIG_PATH, destination_file)
 
-        self.connection.read_config_scp(temp_filename)
+        try:
+            self.connection.read_config_scp(temp_filename)
+        except SCPException, e:
+            if "501-" in e.args[0]:
+                self._fail("SCP not enabled or permission denied")
+            else:
+                raise e
 
         if not os.path.exists(temp_filename) or not len(open(temp_filename).read(10)):
             self._fail("Config backup failed (empty or non-existing backup file)")
