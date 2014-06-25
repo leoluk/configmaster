@@ -26,3 +26,11 @@ class BaseHandler(object):
 
     def run(self, *arus, **kwargs):
         return self._return_success("We successfully did nothing at all")
+
+    @classmethod
+    def run_completed(cls):
+        """
+        Called by the task runner once for every task type after a run is complete.
+
+        """
+        pass
