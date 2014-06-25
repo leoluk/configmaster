@@ -30,16 +30,19 @@ class Command(BaseCommand):
                 for task in device.device_type.tasks.all():
                     try:
                         if RE_MATCH_SINGLE_WORD.match(task.class_name):
-                            handler_obj = getattr(handlers, task.class_name)(device)
+                            try:
+                                handler_obj = getattr(handlers, task.class_name)(device)
+                            except AttributeError:
+                                raise TaskExecutionError('Handler class "%s" not found' % task.class_name)
                             with handler_obj.run_wrapper():
                                 _result = handler_obj.run()
                             if _result is None:
-                                raise RuntimeError("Task handler did not return any data")
+                                raise TaskExecutionError("Task handler did not return any data")
                             result, output = _result
                         elif not task.class_name:
-                            raise ValueError("Empty class name")
+                            raise TaskExecutionError("Empty handler class name")
                         else:
-                            raise ValueError("Invalid class name: %s" % device.device_type.handler)
+                            raise TaskExecutionError("Invalid handler class name: %s" % device.device_type.handler)
 
                     except TaskExecutionError, e:
                         result = Report.RESULT_FAILURE
