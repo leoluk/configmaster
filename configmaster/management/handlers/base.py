@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from configmaster.models import Report
 
 
@@ -19,5 +20,9 @@ class BaseHandler(object):
     def _return_success(message, *args):
         return Report.RESULT_SUCCESS, (message % args if args else message)
 
-    def run(self, *args, **kwargs):
+    @contextmanager
+    def run_wrapper(self, *args, **kwargs):
+        yield
+
+    def run(self, *arus, **kwargs):
         return self._return_success("We successfully did nothing at all")

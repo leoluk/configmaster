@@ -31,7 +31,8 @@ class Command(BaseCommand):
                     try:
                         if RE_MATCH_SINGLE_WORD.match(task.class_name):
                             handler_obj = getattr(handlers, task.class_name)(device)
-                            _result = handler_obj.run()
+                            with handler_obj.run_wrapper():
+                                _result = handler_obj.run()
                             if _result is None:
                                 raise RuntimeError("Task handler did not return any data")
                             result, output = _result

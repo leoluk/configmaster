@@ -1,31 +1,12 @@
 from contextlib import contextmanager
 from paramiko import SSHException
 import socket
-from decorator import decorator
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential
 from utils.remote.common import GuessingFirewallRemoteControl, RemoteException
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
-
-
-
-# All run() methods of base classes are context managers. This allows
-# the base class to catch exceptions raised in the child class.
-# This decorator calls the super method as context manager and should
-# be used to wrap the run() methods of the actual handler classes.
-# This eliminates the need to define a custom method like _run_ssh and
-# _run_ssh_firewall, but is a bit more complicated. The alternative
-# would be to insert an intermediate layer between the task runner
-# and the handler which catches the exceptions (this way, the run()
-# method would only be implemented in the actual handler). I've not
-# yet decided which approach is better.
-
-@decorator
-def parent_context(f, *args, **kwargs):
-    with getattr(super(type(args[0]), args[0]), f.func_name)():
-        return f(*args, **kwargs)
 
 
 class SSHDeviceHandler(BaseHandler):
@@ -58,9 +39,10 @@ class SSHDeviceHandler(BaseHandler):
             self._fail("Client error: %s" % str(e))
 
     @contextmanager
-    def run(self, *args, **kwargs):
-        with self._catch_connection_errors():
-            yield
+    def run_wrapper(self, *args, **kwargs):
+        with super(SSHDeviceHandler, self).run_wrapper(*args, **kwargs):
+            with self._catch_connection_errors():
+                yield
 
 
 class FirewallHandler(SSHDeviceHandler):
@@ -70,9 +52,6 @@ class FirewallHandler(SSHDeviceHandler):
     }
 
     def _get_fw_remote_control(self):
-        """
-        :rtype : common.FirewallRemoteControl
-        """
         try:
             return self.FW_RC_CLASSES[self.device.device_type]
         except KeyError:
@@ -80,20 +59,33 @@ class FirewallHandler(SSHDeviceHandler):
 
     def __init__(self, device):
         super(FirewallHandler, self).__init__(device)
-        self.connection = self._get_fw_remote_control()
+        """:type : FirewallRemoteControl"""
+        self.connection = self._get_fw_remote_control()(
+            self.device.hostname,
+            self.device.device_type.connection_setting.ssh_port
+        )
+
+    @contextmanager
+    def run_wrapper(self, *args, **kwargs):
+        with super(FirewallHandler, self).run_wrapper(*args, **kwargs):
+            self.connection.connect(self.credential.username, self.credential.password)
+            yield
+            self.connection.close()
 
 
-class GuessFirewallTypeHandler(SSHDeviceHandler):
-    @parent_context
+class GuessFirewallTypeHandler(FirewallHandler):
+    def _get_fw_remote_control(self):
+        return GuessingFirewallRemoteControl
+
     def run(self):
-        guesser = GuessingFirewallRemoteControl(self.device.hostname,
-                                                self.device.device_type.connection_setting.ssh_port)
-        guesser.connect(self.credential.username, self.credential.password)
-        guess = guesser.guess_type()
+        guess = self.connection.guess_type()
 
         if not guess:
             self._fail("Could not guess Firewall type")
         else:
             return self._return_success("Guess: %s", guess)
 
-        guesser.close()
+
+class FirewallConfigBackupHandler(FirewallHandler):
+    def run(self, *args, **kwargs):
+        pass
