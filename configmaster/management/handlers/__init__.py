@@ -1,2 +1,2 @@
 from base import BaseHandler
-from firewall import GuessFirewallType
+from firewall import GuessFirewallTypeHandler
