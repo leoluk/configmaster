@@ -2,6 +2,6 @@ requests
 Django==1.6.5
 South==0.8.4
 paramiko==1.14.0
-scpclient==0.5
 ecsda==0.11
 decorator==3.4.0
+scp==0.8.0

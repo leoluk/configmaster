@@ -3,6 +3,7 @@ from django.conf import settings
 import os
 from paramiko import SSHException
 import socket
+import tempfile
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential
@@ -60,14 +61,15 @@ class FirewallHandler(SSHDeviceHandler):
             self._fail("No firewall controller for device type %s", self.device.device_type)
 
 
-    def _get_fw_remote_control(self):
+    def _get_fw_remote_control(self, *args, **kwargs):
         """
 
         :rtype : FirewallRemoteControl
         """
         return self._get_fw_remote_control_class()(
             self.device.hostname,
-            self.device.device_type.connection_setting.ssh_port)
+            self.device.device_type.connection_setting.ssh_port,
+            *args, **kwargs)
 
     def __init__(self, device):
         super(FirewallHandler, self).__init__(device)
@@ -75,10 +77,13 @@ class FirewallHandler(SSHDeviceHandler):
         self.connection = self._get_fw_remote_control()
 
 
+    def _connect_ssh(self):
+        self.connection.connect(self.credential.username, self.credential.password)
+
     @contextmanager
     def run_wrapper(self, *args, **kwargs):
         with super(FirewallHandler, self).run_wrapper(*args, **kwargs):
-            self.connection.connect(self.credential.username, self.credential.password)
+            self._connect_ssh()
             yield
             self.connection.close()
 
@@ -97,14 +102,23 @@ class GuessFirewallTypeHandler(FirewallHandler):
 
 
 class FirewallConfigBackupHandler(FirewallHandler):
+    def _connect_ssh(self):
+        self.connection.connect(self.credential.username, self.credential.password,
+                                open_command_channel=False, open_scp_channel=True)
+
     def run(self, *args, **kwargs):
-        config = self.connection.read_config()
+        temp_dir = tempfile.mkdtemp()
+        destination_file = '{}.txt'.format(self.device.label)
+        temp_filename = os.path.join(temp_dir, destination_file)
+        filename = os.path.join(settings.TASK_FW_CONFIG_PATH, destination_file)
 
-        filename = os.path.join(settings.TASK_FW_CONFIG_PATH, '{}.txt'.format(self.device.label))
+        self.connection.read_config_scp(temp_filename)
 
-        if config:
-            with open(filename, 'w') as f:
-                f.write(config)
-                return self._return_success("Configuration successfully backed up")
+        if not os.path.exists(temp_filename) or not len(open(temp_filename).read(10)):
+            self._fail("Config backup failed (empty or non-existing backup file)")
         else:
-            self._fail("Empty configuration file read from firewall")
+            if os.path.exists(filename):
+                os.unlink(filename)
+            os.rename(temp_filename, filename)
+            return self._return_success("Config backup successful")
+

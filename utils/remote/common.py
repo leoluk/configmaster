@@ -1,9 +1,11 @@
 from contextlib import contextmanager
+import scp
 import socket
 import paramiko
 from subprocess import list2cmdline
 
 from utils import pexpect
+
 
 __author__ = 'lschabel'
 
@@ -47,6 +49,7 @@ class SSHRemoteControl(BaseRemoteControl):
         self.password = None
         self.timeout = timeout
         self.interact = None
+        self.scp = None
         self.cmd_timeout = cmd_timeout
         self.allocate_pty = True
 
@@ -84,18 +87,32 @@ class SSHRemoteControl(BaseRemoteControl):
         except (paramiko.SSHException, socket.timeout), e:
             raise ConnectionError("SSH socket failed: %s" % str(e))
 
-    def connect(self, username, password):
-        self.username = username
-        self.password = password
-
-        self.transport = self._make_transport()
-        self._connect_transport(self.transport)
+    def _open_console_channel(self):
         self.chan = self.transport.open_session()
         self.chan.settimeout(self.timeout)
         if self.allocate_pty:
             self.chan.get_pty()
         self.chan.invoke_shell()
         self.interact = pexpect.SSHClientInteraction(self.chan, timeout=self.cmd_timeout)
+
+    def _open_scp_channel(self):
+        self.scp = scp.SCPClient(self.transport)
+
+    def connect(self, username, password, open_command_channel=True,
+                open_scp_channel=False):
+        self.username = username
+        self.password = password
+
+        self.transport = self._make_transport()
+        self._connect_transport(self.transport)
+
+        # Note: opening multiple channels is not supported by many embedded devices!
+
+        if open_command_channel:
+            self._open_console_channel()
+        if open_scp_channel:
+            self._open_scp_channel()
+
 
     def close(self):
         if self.chan:
@@ -119,7 +136,6 @@ class SSHRemoteControl(BaseRemoteControl):
 
 
 class FirewallRemoteControl(SSHRemoteControl):
-
     def __init__(self, hostname, port=22, hostkey=None, timeout=5, cmd_timeout=10):
         super(FirewallRemoteControl, self).__init__(hostname, port, hostkey, timeout, cmd_timeout)
         self.allocate_pty = False
@@ -141,6 +157,9 @@ class FirewallRemoteControl(SSHRemoteControl):
         raise NotImplementedError
 
     def read_config(self):
+        raise NotImplementedError
+
+    def read_config_scp(self, destination):
         raise NotImplementedError
 
     def setup_terminal(self):
@@ -176,6 +195,7 @@ class GuessingFirewallRemoteControl(FirewallRemoteControl):
 
 if __name__ == '__main__':
     import getpass
+
     rc = GuessingFirewallRemoteControl("192.168.50.50")
     rc.connect("root", getpass.getpass())
     print rc.guess_type()
