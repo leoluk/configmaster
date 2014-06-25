@@ -38,7 +38,11 @@ class SSHDeviceHandler(BaseHandler):
         # Handle network/connections errors (all other errors will be caught by the task
         # runner and reported with full traceback).
 
+        except socket.timeout, e:
+            self._fail("Client error: Socket timeout")
         except socket.error, e:
+            if e.strerror is None:
+                self.run()  # run without the context manager chain, TODO: better solution for this
             self._fail("Socket error: %s" % e.strerror)
         except (RemoteException, SSHException), e:
             self._fail("Client error: %s" % str(e))
@@ -103,7 +107,7 @@ class GuessFirewallTypeHandler(FirewallHandler):
             device_type = DeviceType.objects.get(name=guess)
             self.device.device_type = device_type
             self.device.save()
-            return self._return_success("Guess: %s", guess)
+            return self.return_success("Guess: %s", guess)
 
 
 class FirewallConfigBackupHandler(FirewallHandler):
