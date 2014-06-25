@@ -45,6 +45,9 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
             else:
                 return True
 
+    def read_config_scp(self, destination):
+        self.scp.get("sys_config", destination)
+
     def add_admin(self, username, password, privilege="prof_admin", role=None, sshkey=None, ssh_only_key=False,
                   verify=True):
 
@@ -111,7 +114,8 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
             self.run_command("set output more", True)
 
     def close(self):
-        self.interact.send("exit")
+        if self.chan:
+            self.interact.send("exit")
         super(FortigateRemoteControl, self).close()
 
 
