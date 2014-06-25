@@ -10,6 +10,18 @@ from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
 
 
+
+# All run() methods of base classes are context managers. This allows
+# the base class to catch exceptions raised in the child class.
+# This decorator calls the super method as context manager and should
+# be used to wrap the run() methods of the actual handler classes.
+# This eliminates the need to define a custom method like _run_ssh and
+# _run_ssh_firewall, but is a bit more complicated. The alternative
+# would be to insert an intermediate layer between the task runner
+# and the handler which catches the exceptions (this way, the run()
+# method would only be implemented in the actual handler). I've not
+# yet decided which approach is better.
+
 @decorator
 def parent_context(f, *args, **kwargs):
     with getattr(super(type(args[0]), args[0]), f.func_name)():
