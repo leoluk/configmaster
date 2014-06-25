@@ -28,6 +28,7 @@ class Command(BaseCommand):
                 self.stdout.write("Processing %s..." % device.label)
 
                 for task in device.device_type.tasks.all():
+                    report = Report()
                     try:
                         if RE_MATCH_SINGLE_WORD.match(task.class_name):
                             try:
@@ -47,17 +48,20 @@ class Command(BaseCommand):
                     except TaskExecutionError, e:
                         result = Report.RESULT_FAILURE
                         output = str(e)
-                    except Exception:
+                    except Exception, e:
                         result = Report.RESULT_FAILURE
-                        output = traceback.format_exc()
+                        output = u"Uncaught {}, message: {}".format(type(e).__name__, str(e))
+                        report.long_output = traceback.format_exc()
+
 
                     if result == Report.RESULT_FAILURE:
                         self.stderr.write('Device %s, task "%s" failed: %s' % (device.label, task.name, output))
+                        if report.long_output:
+                            self.stderr.write(report.long_output)
                     else:
                         self.stdout.write('Device %s, task "%s" succeeded' % (device.label, task.name))
                         self.stdout.write("Output: %r" % output)
 
-                    report = Report()
                     report.device = device
                     report.result = result
                     report.task = task

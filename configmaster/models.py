@@ -109,5 +109,4 @@ class Report(models.Model):
 
     result = models.IntegerField(choices=RESULT_CHOICES, editable=False)
     output = models.TextField(editable=False)
-
-
+    long_output = models.TextField(editable=False, null=True)

@@ -34,8 +34,8 @@ class DeviceAdmin(admin.ModelAdmin):
 
 
 class ReportAdmin(admin.ModelAdmin):
-    readonly_fields = ("device", "date", "task", "result", "output")
-    list_display = ("date", "device", "task", "result")
+    readonly_fields = ("device", "date", "task", "result", "output", "long_output")
+    list_display = ("date", "device", "task", "result", "output")
     list_filter = ("result",)
 
 
