@@ -13,6 +13,7 @@ class Command(BaseCommand):
 
     # noinspection PyBroadException
     def handle(self, *args, **options):
+        call_after_completion = dict()
         for device in Device.objects.all():
             if device.device_type is None:
                 self.stdout.write("Device %s has no device type, skipping..." % device.label)
@@ -39,6 +40,7 @@ class Command(BaseCommand):
                                 _result = handler_obj.run()
                             if _result is None:
                                 raise TaskExecutionError("Task handler did not return any data")
+                            call_after_completion[task.name] = handler_obj.run_completed
                             result, output = _result
                         elif not task.class_name:
                             raise TaskExecutionError("Empty handler class name")
@@ -67,3 +69,10 @@ class Command(BaseCommand):
                     report.task = task
                     report.output = output
                     report.save()
+
+
+        for task_name, func in call_after_completion.iteritems():
+            self.stdout.write('Calling run_complete for task "%s"...' % task_name)
+            func()
+
+        self.stdout.write("Run completed.")

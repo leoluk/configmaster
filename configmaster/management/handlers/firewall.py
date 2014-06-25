@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from django.conf import settings
 import os
+from sh import git
 from paramiko import SSHException
 from scp import SCPException
 import socket
@@ -107,6 +108,17 @@ class FirewallConfigBackupHandler(FirewallHandler):
         self.connection.connect(self.credential.username, self.credential.password,
                                 open_command_channel=False, open_scp_channel=True)
 
+    @staticmethod
+    def _git_commit(commit_message, commit_all=False):
+        if not "nothing to commit" in git.status():
+            git.commit('-a' if commit_all else '', message=commit_message)
+            if settings.DEBUG:
+                git.push()
+            changes = True
+        else:
+            changes = False
+        return changes
+
     def run(self, *args, **kwargs):
         temp_dir = tempfile.mkdtemp()
         destination_file = '{}.txt'.format(self.device.label)
@@ -127,5 +139,19 @@ class FirewallConfigBackupHandler(FirewallHandler):
             if os.path.exists(filename):
                 os.unlink(filename)
             os.rename(temp_filename, filename)
-            return self._return_success("Config backup successful")
+
+            os.chdir(settings.TASK_FW_CONFIG_PATH)
+
+            # Commit config changes
+            commit_message = "Firewall config change on %s" % self.device.label
+            changes = self._git_commit(commit_message, commit_all=True)
+
+            # Commit any new, previously untracked configs
+            git.add('.')
+            commit_message = "Firewall config for %s added" % self.device.label
+            changes |= self._git_commit(commit_message)
+
+            return self._return_success("Config backup successful ({})".format(
+                "no changes" if not changes else "changes found"
+            ))
 

@@ -5,3 +5,4 @@ paramiko==1.14.0
 ecsda==0.11
 decorator==3.4.0
 scp==0.8.0
+sh==1.09
