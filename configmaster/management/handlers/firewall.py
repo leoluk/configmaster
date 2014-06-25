@@ -1,10 +1,12 @@
 from contextlib import contextmanager
+from django.conf import settings
+import os
 from paramiko import SSHException
 import socket
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential
-from utils.remote.common import GuessingFirewallRemoteControl, RemoteException
+from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, FirewallRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
 
@@ -47,23 +49,31 @@ class SSHDeviceHandler(BaseHandler):
 
 class FirewallHandler(SSHDeviceHandler):
     FW_RC_CLASSES = {
-        "Fortigate": FortigateRemoteControl,
-        "Juniper": JuniperRemoteControl
+        u"Fortigate": FortigateRemoteControl,
+        u"Juniper": JuniperRemoteControl
     }
 
-    def _get_fw_remote_control(self):
+    def _get_fw_remote_control_class(self):
         try:
-            return self.FW_RC_CLASSES[self.device.device_type]
-        except KeyError:
+            return self.FW_RC_CLASSES[unicode(self.device.device_type.name)]
+        except KeyError, e:
             self._fail("No firewall controller for device type %s", self.device.device_type)
+
+
+    def _get_fw_remote_control(self):
+        """
+
+        :rtype : FirewallRemoteControl
+        """
+        return self._get_fw_remote_control_class()(
+            self.device.hostname,
+            self.device.device_type.connection_setting.ssh_port)
 
     def __init__(self, device):
         super(FirewallHandler, self).__init__(device)
         """:type : FirewallRemoteControl"""
-        self.connection = self._get_fw_remote_control()(
-            self.device.hostname,
-            self.device.device_type.connection_setting.ssh_port
-        )
+        self.connection = self._get_fw_remote_control()
+
 
     @contextmanager
     def run_wrapper(self, *args, **kwargs):
@@ -74,7 +84,7 @@ class FirewallHandler(SSHDeviceHandler):
 
 
 class GuessFirewallTypeHandler(FirewallHandler):
-    def _get_fw_remote_control(self):
+    def _get_fw_remote_control_class(self):
         return GuessingFirewallRemoteControl
 
     def run(self):
@@ -88,4 +98,13 @@ class GuessFirewallTypeHandler(FirewallHandler):
 
 class FirewallConfigBackupHandler(FirewallHandler):
     def run(self, *args, **kwargs):
-        pass
+        config = self.connection.read_config()
+
+        filename = os.path.join(settings.TASK_FW_CONFIG_PATH, '{}.txt'.format(self.device.label))
+
+        if config:
+            with open(filename, 'w') as f:
+                f.write(config)
+                return self._return_success("Configuration successfully backed up")
+        else:
+            self._fail("Empty configuration file read from firewall")
