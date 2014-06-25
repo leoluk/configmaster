@@ -1,9 +1,19 @@
+from contextlib import contextmanager
 from paramiko import SSHException
 import socket
+from decorator import decorator
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential
 from utils.remote.common import GuessingFirewallRemoteControl, RemoteException
+from utils.remote.fortigate import FortigateRemoteControl
+from utils.remote.juniper import JuniperRemoteControl
+
+
+@decorator
+def parent_context(f, *args, **kwargs):
+    with getattr(super(type(args[0]), args[0]), f.func_name)():
+        return f(*args, **kwargs)
 
 
 class SSHDeviceHandler(BaseHandler):
@@ -22,12 +32,10 @@ class SSHDeviceHandler(BaseHandler):
         if not self.credential or self.credential.type != Credential.TYPE_PLAINTEXT:
             self._fail("No valid credential for device")
 
-    def _ssh_run(self):
-        raise NotImplementedError("SSHDeviceHandler is a base class and not supposed to be run directly.")
-
-    def run(self, *args, **kwargs):
+    @contextmanager
+    def _catch_connection_errors(self):
         try:
-            return self._ssh_run()
+            yield
 
         # Handle network/connections errors (all other errors will be caught by the task
         # runner and reported with full traceback).
@@ -37,14 +45,35 @@ class SSHDeviceHandler(BaseHandler):
         except (RemoteException, SSHException), e:
             self._fail("Client error: %s" % str(e))
 
+    @contextmanager
+    def run(self, *args, **kwargs):
+        with self._catch_connection_errors():
+            yield
 
-class ConnectedFirewallHandler(SSHDeviceHandler):
-    def _ssh_run(self):
-        return super(ConnectedFirewallHandler, self)._ssh_run()
+
+class FirewallHandler(SSHDeviceHandler):
+    FW_RC_CLASSES = {
+        "Fortigate": FortigateRemoteControl,
+        "Juniper": JuniperRemoteControl
+    }
+
+    def _get_fw_remote_control(self):
+        """
+        :rtype : common.FirewallRemoteControl
+        """
+        try:
+            return self.FW_RC_CLASSES[self.device.device_type]
+        except KeyError:
+            self._fail("No firewall controller for device type %s", self.device.device_type)
+
+    def __init__(self, device):
+        super(FirewallHandler, self).__init__(device)
+        self.connection = self._get_fw_remote_control()
 
 
 class GuessFirewallTypeHandler(SSHDeviceHandler):
-    def _ssh_run(self):
+    @parent_context
+    def run(self):
         guesser = GuessingFirewallRemoteControl(self.device.hostname,
                                                 self.device.device_type.connection_setting.ssh_port)
         guesser.connect(self.credential.username, self.credential.password)
@@ -56,4 +85,3 @@ class GuessFirewallTypeHandler(SSHDeviceHandler):
             return self._return_success("Guess: %s", guess)
 
         guesser.close()
-
