@@ -6,7 +6,7 @@ import re
 
 import common
 
-#FIXME: Regex appears to be quite slow
+# FIXME: Regex appears to be quite slow
 RE_SYSINFO = re.compile(
     r""".*^Product Name:\s+(?P<model>.+)$
 .*^Serial Number:\s+(?P<serial>\d+).*$
@@ -67,9 +67,11 @@ class JuniperRemoteControl(common.FirewallRemoteControl):
         self.run_command("set scp enable")
         self.save_and_apply()
 
-    def connect(self, username, password):
-        super(JuniperRemoteControl, self).connect(username, password)
-        self.expect_prompt()
+    def connect(self, username, password, **kwargs):
+        super(JuniperRemoteControl, self).connect(username, password, **kwargs)
+
+        if self.chan:
+            self.expect_prompt()
 
     def run_command(self, command):
         self.interact.send(command)
@@ -84,6 +86,9 @@ class JuniperRemoteControl(common.FirewallRemoteControl):
 
     def save_and_apply(self):
         self.run_command("save")
+
+    def read_config_scp(self, destination):
+        self.scp.get("ns_sys_config", destination)
 
     def read_config(self):
         with self.ctx_term_setup():
@@ -111,7 +116,8 @@ class JuniperRemoteControl(common.FirewallRemoteControl):
         self.run_command("set console timeout 10")
 
     def close(self):
-        self.interact.send("exit")
+        if self.chan:
+            self.interact.send("exit")
         super(JuniperRemoteControl, self).close()
 
 
