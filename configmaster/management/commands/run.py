@@ -29,6 +29,9 @@ class Command(BaseCommand):
                 self.stdout.write("Processing %s..." % device.label)
 
                 for task in device.device_type.tasks.all():
+                    if not task.enabled:
+                        self.stdout.write('Device %s, task "%s" skipped (disabled)' % (device.label, task.name))
+                        continue
                     report = Report()
                     try:
                         if RE_MATCH_SINGLE_WORD.match(task.class_name):

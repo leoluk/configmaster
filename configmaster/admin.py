@@ -6,7 +6,7 @@ from configmaster.models import Device
 
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("label", "name", "hostname", "group", "device_type", "enabled")
-    list_filter = ("group", "device_type", "do_not_use_scp")
+    list_filter = ("group", "device_type", "do_not_use_scp", "enabled")
     search_fields = ("name", "hostname")
 
     fieldsets = (
