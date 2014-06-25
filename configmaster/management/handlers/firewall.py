@@ -8,7 +8,7 @@ import socket
 import tempfile
 
 from configmaster.management.handlers import BaseHandler
-from configmaster.models import Credential
+from configmaster.models import Credential, DeviceType
 from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, FirewallRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
@@ -100,6 +100,9 @@ class GuessFirewallTypeHandler(FirewallHandler):
         if not guess:
             self._fail("Could not guess Firewall type")
         else:
+            device_type = DeviceType.objects.get(name=guess)
+            self.device.device_type = device_type
+            self.device.save()
             return self._return_success("Guess: %s", guess)
 
 
