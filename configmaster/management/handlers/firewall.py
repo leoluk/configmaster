@@ -109,9 +109,9 @@ class FirewallConfigBackupHandler(FirewallHandler):
                                 open_command_channel=False, open_scp_channel=True)
 
     @staticmethod
-    def _git_commit(commit_message, commit_all=False):
-        if not "nothing to commit" in git.status():
-            git.commit('-a' if commit_all else '', message=commit_message)
+    def _git_commit(commit_message):
+        if len(git("diff-index", "--name-only", "HEAD", "--")):
+            git.commit(message=commit_message)
             if settings.DEBUG:
                 git.push()
             changes = True
@@ -125,13 +125,20 @@ class FirewallConfigBackupHandler(FirewallHandler):
         temp_filename = os.path.join(temp_dir, destination_file)
         filename = os.path.join(settings.TASK_FW_CONFIG_PATH, destination_file)
 
-        try:
-            self.connection.read_config_scp(temp_filename)
-        except SCPException, e:
-            if "501-" in e.args[0]:
-                self._fail("SCP not enabled or permission denied")
-            else:
-                raise e
+        if not self.device.do_not_use_scp:
+            try:
+                self.connection.read_config_scp(temp_filename)
+            except SCPException, e:
+                if "501-" in e.args[0]:
+                    self.device.do_not_use_scp = True
+                    self.device.save()
+                    self._fail("SCP not enabled or permission denied, retrying without SCP on next run")
+                else:
+                    raise e
+        else:
+            config = self.connection.read_config()
+            with open(temp_filename, 'w') as f:
+                f.write(config)
 
         if not os.path.exists(temp_filename) or not len(open(temp_filename).read(10)):
             self._fail("Config backup failed (empty or non-existing backup file)")
@@ -143,8 +150,9 @@ class FirewallConfigBackupHandler(FirewallHandler):
             os.chdir(settings.TASK_FW_CONFIG_PATH)
 
             # Commit config changes
+            git.add('-u')
             commit_message = "Firewall config change on %s" % self.device.label
-            changes = self._git_commit(commit_message, commit_all=True)
+            changes = self._git_commit(commit_message)
 
             # Commit any new, previously untracked configs
             git.add('.')
