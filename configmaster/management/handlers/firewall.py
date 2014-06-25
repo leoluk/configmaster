@@ -6,41 +6,28 @@ from configmaster.models import Credential
 from utils.remote.common import GuessingFirewallRemoteControl, RemoteException
 
 
-class FirewallHandler(BaseHandler):
-    def run(self, *args, **kwargs):
-        return super(FirewallHandler, self).run(*args, **kwargs)
+class SSHDeviceHandler(BaseHandler):
+    def __init__(self, device):
+        super(SSHDeviceHandler, self).__init__(device)
 
-
-class GuessFirewallType(FirewallHandler):
-    def run(self, commons=None, *args, **kwargs):
-        super(GuessFirewallType, self).run(*args, **kwargs)
-        device = self.device
-
-        if device.credential:
-            credential = self.device.credential
+        if self.device.credential:
+            self.credential = self.device.credential
         else:
-            credential = self.device.device_type.credential
-
-        if not device.device_type.connection_setting:
+            self.credential = self.device.device_type.credential
+        if not self.device.device_type.connection_setting:
             self._fail("No connection setting for device")
-        elif not device.device_type.connection_setting.ssh_port:
+        elif not self.device.device_type.connection_setting.ssh_port:
             self._fail("Invalid SSH port setting")
 
-        # Key-based login not yet supported
-        if not credential or credential.type != Credential.TYPE_PLAINTEXT:
+        if not self.credential or self.credential.type != Credential.TYPE_PLAINTEXT:
             self._fail("No valid credential for device")
 
+    def _ssh_run(self):
+        raise NotImplementedError("SSHDeviceHandler is a base class and not supposed to be run directly.")
+
+    def run(self, *args, **kwargs):
         try:
-            guesser = GuessingFirewallRemoteControl(device.hostname, device.device_type.connection_setting.ssh_port)
-            guesser.connect(credential.username, credential.password)
-            guess = guesser.guess_type()
-
-            if not guess:
-                self._fail("Could not guess Firewall type")
-            else:
-                return self._return_success("Guess: %s", guess)
-
-            guesser.close()
+            return self._ssh_run()
 
         # Handle network/connections errors (all other errors will be caught by the task
         # runner and reported with full traceback).
@@ -49,3 +36,24 @@ class GuessFirewallType(FirewallHandler):
             self._fail("Socket error: %s" % e.strerror)
         except (RemoteException, SSHException), e:
             self._fail("Client error: %s" % str(e))
+
+
+class ConnectedFirewallHandler(SSHDeviceHandler):
+    def _ssh_run(self):
+        return super(ConnectedFirewallHandler, self)._ssh_run()
+
+
+class GuessFirewallTypeHandler(SSHDeviceHandler):
+    def _ssh_run(self):
+        guesser = GuessingFirewallRemoteControl(self.device.hostname,
+                                                self.device.device_type.connection_setting.ssh_port)
+        guesser.connect(self.credential.username, self.credential.password)
+        guess = guesser.guess_type()
+
+        if not guess:
+            self._fail("Could not guess Firewall type")
+        else:
+            return self._return_success("Guess: %s", guess)
+
+        guesser.close()
+
