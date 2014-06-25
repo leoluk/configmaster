@@ -106,7 +106,7 @@ class GuessFirewallTypeHandler(FirewallHandler):
 class FirewallConfigBackupHandler(FirewallHandler):
     def _connect_ssh(self):
         self.connection.connect(self.credential.username, self.credential.password,
-                                open_command_channel=False, open_scp_channel=True)
+                                open_command_channel=False, open_scp_channel=False)
 
     @staticmethod
     def _git_commit(commit_message):
@@ -127,6 +127,7 @@ class FirewallConfigBackupHandler(FirewallHandler):
 
         if not self.device.do_not_use_scp:
             try:
+                self.connection.open_scp_channel()
                 self.connection.read_config_scp(temp_filename)
             except SCPException, e:
                 if "501-" in e.args[0]:
@@ -136,6 +137,7 @@ class FirewallConfigBackupHandler(FirewallHandler):
                 else:
                     raise e
         else:
+            self.connection.open_console_channel()
             config = self.connection.read_config()
             with open(temp_filename, 'w') as f:
                 f.write(config)

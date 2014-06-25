@@ -87,7 +87,7 @@ class SSHRemoteControl(BaseRemoteControl):
         except (paramiko.SSHException, socket.timeout), e:
             raise ConnectionError("SSH socket failed: %s" % str(e))
 
-    def _open_console_channel(self):
+    def open_console_channel(self):
         self.chan = self.transport.open_session()
         self.chan.settimeout(self.timeout)
         if self.allocate_pty:
@@ -95,7 +95,7 @@ class SSHRemoteControl(BaseRemoteControl):
         self.chan.invoke_shell()
         self.interact = pexpect.SSHClientInteraction(self.chan, timeout=self.cmd_timeout)
 
-    def _open_scp_channel(self):
+    def open_scp_channel(self):
         self.scp = scp.SCPClient(self.transport)
 
     def connect(self, username, password, open_command_channel=True,
@@ -109,9 +109,9 @@ class SSHRemoteControl(BaseRemoteControl):
         # Note: opening multiple channels is not supported by many embedded devices!
 
         if open_command_channel:
-            self._open_console_channel()
+            self.open_console_channel()
         if open_scp_channel:
-            self._open_scp_channel()
+            self.open_scp_channel()
 
 
     def close(self):
