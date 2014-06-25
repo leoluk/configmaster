@@ -6,7 +6,7 @@ from configmaster.models import Device
 
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("label", "name", "hostname", "group", "device_type", "enabled")
-    list_filter = ("group", "device_type")
+    list_filter = ("group", "device_type", "do_not_use_scp")
     search_fields = ("name", "hostname")
 
     fieldsets = (
@@ -14,7 +14,7 @@ class DeviceAdmin(admin.ModelAdmin):
             'fields': ('name', 'label', 'group', 'device_type')
         }),
         ("Settings", {
-            'fields': ('enabled', 'sync', 'credential', 'ssh_known_host')
+            'fields': ('enabled', 'sync', 'credential', 'ssh_known_host', 'do_not_use_scp')
         }),
         ('Config management data', {
             'description': "Will get overwritten during the next run.",
