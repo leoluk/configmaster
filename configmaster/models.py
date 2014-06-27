@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 
 
@@ -58,6 +60,24 @@ class DeviceType(models.Model):
     connection_setting = models.ForeignKey(ConnectionSetting, null=True, blank=True)
     credential = models.ForeignKey(Credential, help_text="Default credential for this device type", null=True,
                                    blank=True)
+
+    config_filter = models.TextField(help_text="List of regular expressions, one per line. "
+                                               "Content matched by one of the expressions will "
+                                               "be removed from config files before they are committed.<br/>"
+                                               "Dot does not match newlines, ^$ match the beginning "
+                                               "and end of each line.", blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(DeviceType, self).__init__(*args, **kwargs)
+        self._filter_expressions = []
+
+    @property
+    def filter_expressions(self):
+        if not self._filter_expressions and len(self.config_filter):
+            for regex in self.config_filter.splitlines():
+                self._filter_expressions.append(re.compile(regex, flags=re.MULTILINE))
+
+        return self._filter_expressions
 
     def __unicode__(self):
         return self.name
