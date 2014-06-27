@@ -17,6 +17,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 PWSAFE_EXPORT_URL = "https://pwsafe.continum.net/pwsafe/configmaster_export"
 TASK_FW_CONFIG_PATH = "/home/configmaster/continum-network-configs/Firewalls/"
+TASK_FW_CONFIG_DISABLE_GIT = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/

@@ -152,11 +152,31 @@ class FirewallConfigBackupHandler(FirewallHandler):
         if not os.path.exists(temp_filename) or not len(open(temp_filename).read(10)):
             self._fail("Config backup failed (empty or non-existing backup file)")
         else:
+            if len(self.device.device_type.filter_expressions):
+
+                # The entire file is read into memory, processed, and written back.
+                # This is, of course, not particularly memory efficient, but the files
+                # we're processing are pretty small (<1MB), so the memory usage is not
+                # a concern. This applies to read_config as well, as it keeps the entire
+                # file in memory while receiving it.
+
+                with open(temp_filename) as f:
+                    raw_config = f.read()
+
+                for regex in self.device.device_type.filter_expressions:
+                    raw_config = regex.sub('', raw_config)
+
+                with open(temp_filename, 'w') as f:
+                    f.write(raw_config)
+
             if os.path.exists(filename):
                 os.unlink(filename)
             os.rename(temp_filename, filename)
 
             os.chdir(settings.TASK_FW_CONFIG_PATH)
+
+            if settings.TASK_FW_CONFIG_DISABLE_GIT:
+                return self._return_success("Config backup successful")
 
             # Commit config changes
             git.add('-u')
