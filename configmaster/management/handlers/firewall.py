@@ -180,7 +180,8 @@ class FirewallConfigBackupHandler(FirewallHandler):
 
             # Commit config changes
             git.add('-u')
-            commit_message = "Firewall config change on %s" % self.device.label
+            commit_message = "Firewall config change on {}{}".format(
+                self.device.label, " ({})".format(self.device.name) if self.device.name else "")
             changes = self._git_commit(commit_message)
 
             # Commit any new, previously untracked configs
