@@ -1,3 +1,4 @@
+import codecs
 from contextlib import contextmanager
 from django.conf import settings
 import os
@@ -167,6 +168,12 @@ class FirewallConfigBackupHandler(FirewallHandler):
                     raw_config = regex.sub('', raw_config)
 
                 with open(temp_filename, 'w') as f:
+                    f.write(raw_config)
+
+            if self.device.device_type.name == "Juniper":
+                with codecs.open(temp_filename, encoding="iso-8859-2") as f:
+                    raw_config = f.read()
+                with codecs.open(temp_filename, 'w', encoding="utf8") as f:
                     f.write(raw_config)
 
             if os.path.exists(filename):
