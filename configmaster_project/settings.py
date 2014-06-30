@@ -20,6 +20,10 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
+INTERNAL_IPS = (
+    "192.168.50.50"
+)
+
 # Custom settings
 
 PWSAFE_EXPORT_URL = "https://pwsafe.continum.net/pwsafe/configmaster_export"
@@ -65,6 +69,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
+
+from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
+
+TEMPLATE_CONTEXT_PROCESSORS += (
+    'django.core.context_processors.request',
+    'django.contrib.messages.context_processors.messages',
+    'django.core.context_processors.debug'
+)
+
 
 ROOT_URLCONF = 'configmaster_project.urls'
 
