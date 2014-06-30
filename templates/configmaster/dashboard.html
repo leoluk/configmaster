@@ -1,1 +1,44 @@
 {% extends 'configmaster/app_base.html' %}
+
+{% block app_name %}Dashboard{% endblock %}
+
+{% load icons %}
+{% load humanize %}
+
+{% block content %}
+
+    <table class="table">
+        <tr>
+            <th>Group</th>
+            <th>Label</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Date</th>
+        </tr>
+        {% for device in object_list %}
+            <tr>
+                <td>{{ device.group }}</td>
+                <td>{{ device.label }}</td>
+                <td>{{ device.name }}</td>
+                {% with device.report_set.latest as report %}
+                    <td>
+                        {% if not device.is_enabled %}
+                            {% icon 'cog' %} Disabled
+                        {% elif device.report_set.latest.result_is_success %}
+                            {% icon 'tick' %} {{ report.output }}
+                        {% else %}
+                            {% icon 'cancel' %}
+                            {{ report.output | truncatechars:60 }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ report.date | naturaltime }}
+                    <td>
+
+                    </td>
+                {% endwith %}
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}

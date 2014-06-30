@@ -141,6 +141,7 @@ class GuessFirewallTypeHandler(FirewallHandler):
 
         super(GuessFirewallTypeHandler, self).__init__(device)
 
+    @property
     def _fw_remote_control_class(self):
         # Bypass the automatic mapping
         return GuessingFirewallRemoteControl
