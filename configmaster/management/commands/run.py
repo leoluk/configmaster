@@ -52,7 +52,7 @@ class Command(BaseCommand):
             if device.device_type is None:
                 self.stdout.write("Device %s has no device type, skipping..." % device.label)
                 continue
-            elif (not device.enabled) or (not device.group.enabled):
+            elif not device.is_enabled():
                 self.stdout.write("Device %s is disabled, skipping..." % device.label)
                 continue
             else:

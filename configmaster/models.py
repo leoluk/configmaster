@@ -122,8 +122,14 @@ class Device(models.Model):
     def __unicode__(self):
         return self.name
 
+    def is_enabled(self):
+        return self.enabled and self.group.enabled
+
 
 class Report(models.Model):
+    class Meta:
+        get_latest_by = "date"
+
     device = models.ForeignKey(Device, editable=False)
     task = models.ForeignKey(Task, editable=False)
     date = models.DateTimeField(auto_now=True)
@@ -139,3 +145,6 @@ class Report(models.Model):
     result = models.IntegerField(choices=RESULT_CHOICES, editable=False)
     output = models.TextField(editable=False)
     long_output = models.TextField(editable=False, null=True)
+
+    def result_is_success(self):
+        return self.result == Report.RESULT_SUCCESS
