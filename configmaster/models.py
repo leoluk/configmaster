@@ -73,6 +73,11 @@ class DeviceType(models.Model):
 
     @property
     def filter_expressions(self):
+        """
+        Return the config_filter field as a list of compiled regular
+        expressions. A simple cache is used to avoid re-compilation on every
+        access.
+        """
         if not self._filter_expressions and len(self.config_filter):
             for regex in self.config_filter.splitlines():
                 self._filter_expressions.append(re.compile(regex, flags=re.MULTILINE))
@@ -105,8 +110,9 @@ class Device(models.Model):
     data_firmware = models.CharField("Firmware revision", max_length=100, blank=True)
     data_serial = models.CharField("Serial number", max_length=100, blank=True)
 
-    # Paramiko is configured to use the OpenSSH known_hosts file. This flag is needed because CM runs are non-
-    # interactive by default, so we need another way to approve host key changes.
+    # Paramiko is configured to use the OpenSSH known_hosts file. This flag
+    # is needed because CM runs are non- interactive by default, so we need
+    # another way to approve host key changes.
 
     ssh_known_host = models.BooleanField(verbose_name="SSH known host", default=False,
                                          help_text="This flag is set after the SSH key has been added to the "
