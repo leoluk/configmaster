@@ -12,7 +12,13 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+# Directories
+
 TEMPLATE_DIRS = (os.path.join(BASE_DIR, "templates"))
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
 
 # Custom settings
 
@@ -37,6 +43,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = (
+    'adminactions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,7 +51,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'configmaster',
-    'south'
+    'south',
+    'icons_famfamfam',
+    'dajaxice',
+    'dajax'
 )
 
 MIDDLEWARE_CLASSES = (
