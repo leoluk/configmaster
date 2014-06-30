@@ -1,0 +1,22 @@
+/* Commons ------------------------------- */
+
+.logo {
+    padding-top: 3px;
+    padding-right: 30px;
+}
+
+body {
+    padding: 30px;
+}
+
+.navbar {
+    margin-bottom: 30px;
+}
+
+.debugnotice {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    margin: 20px;
+    color: #CCCCCC;
+}

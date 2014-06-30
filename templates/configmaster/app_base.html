@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block extra_header %}
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+{% endblock %}
+
+
+{% block base_content %}
+
+    {% url 'dashboard' as url_dashboard %}
+
+    <!-- Static navbar -->
+    <div class="navbar navbar-default">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><span><a href="/"><img src="{% static 'media/c_logo.gif' %}" class="logo"></a></span></li>
+
+                {% if user.is_authenticated %}
+                    <li {% if request.path == url_dashboard %} class="active"{% endif %}><a
+                            href="{{ url_dashboard }}">{% trans "Dashboard" %}</a></li>
+                {% endif %}
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="{% url 'admin:index' %}" target="_blank">{% trans "Admin" %}</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'admin:logout' %}">{% trans "Log out" %}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        <!--/.nav-collapse -->
+    </div>
+
+    <div class="page-header">
+        <div class="text-left">
+            <h1>{% block title %}ConfigMaster{% endblock %}</h1>
+            <strong>{% block app_name %}{% endblock %}</strong>
+        </div>
+
+        <div class="text-right">
+
+        </div>
+    </div>
+
+    {% if debug %}
+        <div class="debugnotice">Debug mode enabled</div>
+    {% endif %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+
+{% endblock %}
