@@ -2,10 +2,21 @@ from django.conf import settings
 from django.core.management import BaseCommand
 import json
 import requests
+
 from configmaster.models import Device, DeviceGroup, DeviceType
 
 
 class Command(BaseCommand):
+    """
+    This management command imports basic device data (group, label,
+    description, hostname) from PWSafe, which in turn imports it from
+    AssetDB.
+    
+    
+    """
+
+    # TODO: propagate out-of-service state (T55)
+
     help = "Import data from PasswordSafe"
 
     # noinspection PyMethodMayBeStatic
@@ -13,6 +24,21 @@ class Command(BaseCommand):
         parser.add_argument('filename', default="", help="Read from file instead of remote server")
 
     def fetch_pwsafe_data(self, url=settings.PWSAFE_EXPORT_URL):
+        """
+        Fetches and returns a JSON document containing all exported
+        devices from PWSafe, indexed by their C-label.
+
+        Example (one device):
+
+        {
+          "C123": {
+            "hostname": "pwsafe.continum.net",
+            "name": "Something something Firewall",
+            "device_group": "Firewall"
+        }
+
+        """
+
         resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
@@ -37,6 +63,11 @@ class Command(BaseCommand):
             device.name = data['name']
             device.hostname = data['hostname']
             device.sync = True
+
+            # During the config management migration from PWSafe to Config-
+            # master, the export contained a few additional fields with
+            # information which was previously stored in the PWSafe database,
+            # but is now managed by ConfigMaster.
 
             if "tmp_remote_enabled" in data:
                 device.enabled = data['tmp_remote_enabled']

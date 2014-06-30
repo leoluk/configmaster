@@ -5,18 +5,28 @@ import os
 from sh import git
 from paramiko import SSHException
 from scp import SCPException
+import shutil
 import socket
 import tempfile
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential, DeviceType
-from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, FirewallRemoteControl
+from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, \
+    FirewallRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
 
 
 class SSHDeviceHandler(BaseHandler):
     def __init__(self, device):
+        """
+        A base class for SSH device handlers. Provides self.credential and
+        handles the most common OS and Paramiko connection errors. Does not
+        provide any connection facilities.
+
+        :type device: configmaster.models.Device
+        """
+
         super(SSHDeviceHandler, self).__init__(device)
 
         if self.device.credential:
@@ -36,14 +46,17 @@ class SSHDeviceHandler(BaseHandler):
         try:
             yield
 
-        # Handle network/connections errors (all other errors will be caught by the task
-        # runner and reported with full traceback).
+        # Handle network/connections errors (all other errors will be caught
+        # by the task runner and reported with full traceback).
 
         except socket.timeout, e:
             self._fail("Client error: Socket timeout")
         except socket.error, e:
             if e.strerror is None:
-                self.run()  # run without the context manager chain, TODO: better solution for this
+                # In some cases, a socket error without any message is raised.
+                # This would result in an useless, empty error message, so
+                # we'll re-raise the exception instead to get a nice traceback.
+                raise e
             self._fail("Socket error: %s" % e.strerror)
         except (RemoteException, SSHException), e:
             self._fail("Client error: %s" % str(e))
@@ -61,31 +74,50 @@ class FirewallHandler(SSHDeviceHandler):
         u"Juniper": JuniperRemoteControl
     }
 
-    def _get_fw_remote_control_class(self):
+    def __init__(self, device):
+        """
+        A base class for SSH-based Firewall handlers. Chooses the right
+        remote control class, instantiates it as self.connection and
+        connects and authenticates with the Firewall using the credential
+        from the database.
+        """
+        super(FirewallHandler, self).__init__(device)
+
+        self.connection = self._get_fw_remote_control()
+        """:type : FirewallRemoteControl"""
+
+    @property
+    def _fw_remote_control_class(self):
+        """
+        Returns the correct Firewall remote control class. The device type <->
+        class mapping is defined in the FW_RC_CLASSES dictionary.
+        """
         try:
             return self.FW_RC_CLASSES[unicode(self.device.device_type.name)]
-        except KeyError, e:
-            self._fail("No firewall controller for device type %s", self.device.device_type)
+        except KeyError:
+            self._fail("No firewall controller for device type %s",
+                       self.device.device_type)
 
 
     def _get_fw_remote_control(self, *args, **kwargs):
         """
+        Instantiates and returns the correct firewall remote controller for the
+        device's device_type.
 
         :rtype : FirewallRemoteControl
         """
-        return self._get_fw_remote_control_class()(
+        return self._fw_remote_control_class(
             self.device.hostname,
             self.device.device_type.connection_setting.ssh_port,
             *args, **kwargs)
 
-    def __init__(self, device):
-        super(FirewallHandler, self).__init__(device)
-        """:type : FirewallRemoteControl"""
-        self.connection = self._get_fw_remote_control()
-
-
     def _connect_ssh(self):
-        self.connection.connect(self.credential.username, self.credential.password)
+        """
+        Does the SSH login and connection setup. This method can be
+        overwritten by descendant classes to customize the login behaviour.
+        """
+        self.connection.connect(self.credential.username,
+                                self.credential.password)
 
     @contextmanager
     def run_wrapper(self, *args, **kwargs):
@@ -96,7 +128,21 @@ class FirewallHandler(SSHDeviceHandler):
 
 
 class GuessFirewallTypeHandler(FirewallHandler):
-    def _get_fw_remote_control_class(self):
+    def __init__(self, device):
+        """
+        This handler guesses the Firewall type. Right now, it detects
+        Juniper SSG firewalls and simply assumes that everything else is a
+        Fortigate firewall. The correct device type is assigned to the
+        device if it was successfully guessed.
+
+        This task is quite useful if you assign it to a catch-all device type
+        for imported firewalls.
+        """
+
+        super(GuessFirewallTypeHandler, self).__init__(device)
+
+    def _fw_remote_control_class(self):
+        # Bypass the automatic mapping
         return GuessingFirewallRemoteControl
 
     def run(self):
@@ -108,26 +154,75 @@ class GuessFirewallTypeHandler(FirewallHandler):
             device_type = DeviceType.objects.get(name=guess)
             self.device.device_type = device_type
             self.device.save()
-            return self.return_success("Guess: %s", guess)
+            return self._return_success("Guess: %s", guess)
 
 
 class FirewallConfigBackupHandler(FirewallHandler):
+    def __init__(self, device):
+        """
+        This device handler does a config backup for Fortigate and Juniper
+        devices and writes the config files to the file system. It can get
+        the config using an interactive session or the SCP subsystem,
+        if it is supported and enabled for a particular device. It commits
+        the config files to a git repository if the
+        iTASK_FW_CONFIG_DISABLE_GIT setting is enabled.
+        """
+
+        super(FirewallConfigBackupHandler, self).__init__(device)
+
     def _connect_ssh(self):
-        self.connection.connect(self.credential.username, self.credential.password,
-                                open_command_channel=False, open_scp_channel=False)
+        """
+        Override the inherited login method and instruct the firewall remote
+        control class to not open any SSH channels. Some firewalls (Juniper)
+        only support one channel per connection.
+        """
+        self.connection.connect(self.credential.username,
+                                self.credential.password,
+                                open_command_channel=False,
+                                open_scp_channel=False)
 
     @staticmethod
     def _git_commit(commit_message):
+        """
+        Do a git commit in the current directory with the given commit
+        message (without adding any changes). Returns True if a commit has
+        been made and False if there weren't any changes. Raises an
+        exception in case of failure
+        """
+
+        # This is, of course, not the most sophisticated approach at
+        # interacting with Git but hey, it's simple and it works. Any error
+        # code != 0 results in an exception, so there's little risk of
+        # silent failure. We should probably replace this with GitPython or
+        # any of the full-featured command-line wrappers at some point in
+        # the future, but as long as all we're doing is automated commits,
+        # it's perfectly fine.
+
+        # Check if there are any staged changes, abort if not (git commit
+        # would return an error otherwise).
+
         if len(git("diff-index", "--name-only", "HEAD", "--")):
             git.commit(message=commit_message)
+
+            # Doing a git push inside the handler means that the entire
+            # task would fail if the push fails (for example, if). Doing a
+            # push once per run is sufficient, so only push inside the task
+            # handler in debug mode.
+
             if settings.DEBUG:
                 git.push()
+
             changes = True
         else:
             changes = False
+
         return changes
 
     def run(self, *args, **kwargs):
+
+        # Create a temporary directory to prevent accidental overwrites,
+        # race conditions, and inconsistent state.
+
         temp_dir = tempfile.mkdtemp()
         destination_file = '{}.txt'.format(self.device.label)
         temp_filename = os.path.join(temp_dir, destination_file)
@@ -138,10 +233,20 @@ class FirewallConfigBackupHandler(FirewallHandler):
                 self.connection.open_scp_channel()
                 self.connection.read_config_scp(temp_filename)
             except SCPException, e:
+
+                # The 501-Permission Denied error indicates that the firewall
+                # does not support the feature or that it's disabled. The
+                # remote control has a enable_scp method, which could be used
+                # to automatically enable SCP. I think it would be better to
+                # do this in a separate task, so we'll just set a flag to use
+                # the conventional method on the next run (there is no
+                # RESULT_RETRY yet, T58).
+
                 if "501-" in e.args[0]:
                     self.device.do_not_use_scp = True
                     self.device.save()
-                    self._fail("SCP not enabled or permission denied, retrying without SCP on next run")
+                    self._fail(
+                        "SCP not enabled or permission denied, retrying without SCP on next run")
                 else:
                     raise e
         else:
@@ -150,16 +255,26 @@ class FirewallConfigBackupHandler(FirewallHandler):
             with open(temp_filename, 'w') as f:
                 f.write(config)
 
-        if not os.path.exists(temp_filename) or not len(open(temp_filename).read(10)):
-            self._fail("Config backup failed (empty or non-existing backup file)")
+        if (not os.path.exists(temp_filename)
+            or not len(open(temp_filename).read(10))):
+            self._fail("Config backup failed "
+                       "(empty or non-existing backup file)")
         else:
+
+            # Remove all text matched by one of the regular expressions
+            # in the device type's config_filter list from the config file.
+
             if len(self.device.device_type.filter_expressions):
 
-                # The entire file is read into memory, processed, and written back.
-                # This is, of course, not particularly memory efficient, but the files
-                # we're processing are pretty small (<1MB), so the memory usage is not
-                # a concern. This applies to read_config as well, as it keeps the entire
-                # file in memory while receiving it.
+                # The entire file is read into memory, processed,
+                # and written back. This is, of course, not particularly
+                # memory efficient, but the files we're processing are
+                # pretty small (<1MB), so the memory usage is not a concern.
+                # This applies to read_config as well, as it keeps the
+                # entire file in memory while receiving it. The temporary
+                # file is stored in /tmp, which is a tmpfs (in-memory
+                # filesystem) on many platforms, so there's no additional
+                # disk I/O in these cases.
 
                 with open(temp_filename) as f:
                     raw_config = f.read()
@@ -170,15 +285,24 @@ class FirewallConfigBackupHandler(FirewallHandler):
                 with open(temp_filename, 'w') as f:
                     f.write(raw_config)
 
+            # Juniper SSG firewalls encode their config as ISO-8859-2.
+            # Convert it to UTF8 so that all configs use the same encoding.
+
             if self.device.device_type.name == "Juniper":
                 with codecs.open(temp_filename, encoding="iso-8859-2") as f:
                     raw_config = f.read()
                 with codecs.open(temp_filename, 'w', encoding="utf8") as f:
                     f.write(raw_config)
 
+            # Move the temporary file to the config folder and clean up
+            # the temporary directory.
+
             if os.path.exists(filename):
                 os.unlink(filename)
             os.rename(temp_filename, filename)
+            shutil.rmtree(temp_dir)
+
+            # Git operations
 
             os.chdir(settings.TASK_FW_CONFIG_PATH)
 
@@ -186,12 +310,15 @@ class FirewallConfigBackupHandler(FirewallHandler):
                 return self._return_success("Config backup successful")
 
             # Commit config changes
+
             git.add('-u')
             commit_message = "Firewall config change on {}{}".format(
-                self.device.label, " ({})".format(self.device.name) if self.device.name else "")
+                self.device.label,
+                " ({})".format(self.device.name) if self.device.name else "")
             changes = self._git_commit(commit_message)
 
             # Commit any new, previously untracked configs
+
             git.add('.')
             commit_message = "Firewall config for %s added" % self.device.label
             changes |= self._git_commit(commit_message)
