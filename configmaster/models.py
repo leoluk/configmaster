@@ -1,3 +1,4 @@
+from django.conf import settings
 import re
 
 from django.db import models
@@ -124,6 +125,14 @@ class Device(models.Model):
 
     def is_enabled(self):
         return self.enabled and self.group.enabled
+
+    @property
+    def asset_db_url(self):
+        return settings.PWSAFE_ASSETDB_REDIRECT % self.label
+
+    @property
+    def pwsafe_url(self):
+        return settings.PWSAFE_DEVICE_URL % self.label
 
 
 class Report(models.Model):
