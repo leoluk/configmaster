@@ -57,7 +57,20 @@ class Command(BaseCommand):
 
         for label, data in pwsafe_export.iteritems():
             self.stdout.write("Processing %s..." % label)
-            device = Device.objects.get_or_create(label=label)[0]
+
+            try:
+                device = Device.objects.get(label=label)
+            except Device.DoesNotExist:
+                if data['out_of_service']:
+                    continue
+                else:
+                    device = Device(label=label)
+            else:
+                if data['out_of_service']:
+                    self.stdout.write("Device %s out of service, deleting..." % label)
+                    device.delete()
+                    continue
+
             group = DeviceGroup.objects.get_or_create(name=data['device_group'])[0]
             device.group = group
             device.name = data['name']
