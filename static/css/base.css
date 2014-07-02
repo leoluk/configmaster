@@ -20,3 +20,19 @@ body {
     margin: 20px;
     color: #CCCCCC;
 }
+
+.actions a {
+    text-decoration: none !important;
+}
+
+.img_disabled {
+    -webkit-filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    -o-filter: grayscale(100%);
+    -ms-filter: grayscale(100%);
+    filter: grayscale(100%);
+    opacity: 0.2;
+}
+
+
+

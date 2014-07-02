@@ -4,8 +4,16 @@
 
 {% load icons %}
 {% load humanize %}
+{% load admin_urls %}
 
 {% block content %}
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+                    $(".action").tooltip();
+                }
+        )
+    </script>
 
     <table class="table">
         <tr>
@@ -14,6 +22,7 @@
             <th>Name</th>
             <th>Status</th>
             <th>Date</th>
+            <th>Actions</th>
         </tr>
         {% for device in object_list %}
             <tr>
@@ -33,10 +42,36 @@
                     </td>
                     <td>
                         {{ report.date | naturaltime }}
-                    <td>
-
                     </td>
                 {% endwith %}
+                <td>
+                    <div class="actions">
+                        <a class="action" data-toggle="tooltip" title="Edit device" target="_blank"
+                           href="{% url "admin:configmaster_device_change" device.id %}">
+                            {% icon "wrench" %}
+                        </a>
+                        {% if device.report_set.count %}
+                            <a class="action" data-toggle="tooltip" title="View report" target="_blank"
+                            href="{% url "admin:configmaster_report_change" device.report_set.latest.id %}">
+                            {% icon "page_white_text" %}
+                        {% else %}
+                            <a>{% icon "page_white" classes="img_disabled" %}
+                        {% endif %}
+                        </a>
+                        {% if device.is_enabled %}
+                            <a class="action" data-toggle="tooltip" title="Run now">
+                            {% icon "cog" classes="img_disabled" %}
+                        {% else %}
+                            <a>
+                            {% icon "cog" classes="img_disabled" %}
+                        {% endif %}
+                        </a>
+                        <a class="action" data-toggle="tooltip" title="AssetDB lookup"
+                                href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+                        <a class="action" data-toggle="tooltip" title="PWSafe lookup"
+                                href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
+                    </div>
+                </td>
             </tr>
         {% endfor %}
     </table>
