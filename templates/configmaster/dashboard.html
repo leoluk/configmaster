@@ -54,9 +54,9 @@
                             {% if report %}
                                 <a class="action" data-toggle="tooltip" title="View report" target="_blank"
                                    href="{% url "admin:configmaster_report_change" report.id %}">
-                                {% icon "page_white_text" %}
+                                {% icon "report" %}
                             {% else %}
-                                <a>{% icon "page_white" classes="img_disabled" %}
+                                <a>{% icon "report" classes="img_disabled" %}
                             {% endif %}
                             </a>
                             {% if device.is_enabled %}
@@ -65,6 +65,15 @@
                             {% else %}
                                 <a>
                                 {% icon "cog" classes="img_disabled" %}
+                            {% endif %}
+                            </a>
+                            {% if device.number_of_successful_runs and device.task_result_url %}
+                                <a class="action" data-toggle="tooltip" title="Go to task result"
+                                   href="{{ device.task_result_url }}" target="_blank">
+                                {% icon "page_go" %}
+                            {% else %}
+                                <a>
+                                {% icon "page_go" classes="img_disabled" %}
                             {% endif %}
                             </a>
                             <a class="action" data-toggle="tooltip" title="AssetDB lookup"

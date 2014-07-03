@@ -49,9 +49,25 @@ class Task(models.Model):
     description = models.TextField(blank=True, default="")
     class_name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
+    result_url = models.CharField(max_length=100, verbose_name="Result URL", null=True, blank=True,
+                                  help_text="A URL which points to the result of a task. Will be displayed in "
+                                            "the frontend if the task has been successfully run at least once. "
+                                            "The following placeholders are available: {label}, {hostname}, "
+                                            "{device_type} and {group}.")
 
     def __unicode__(self):
         return self.name
+
+    def get_formatted_result_url(self, device):
+        """
+        :type device: Device
+        """
+        return self.result_url.format(
+            label=device.label,
+            hostname=device.hostname,
+            device_type=device.device_type,
+            group=device.group
+        )
 
 
 class DeviceType(models.Model):
@@ -134,6 +150,17 @@ class Device(models.Model):
     def pwsafe_url(self):
         return settings.PWSAFE_DEVICE_URL % self.label
 
+    @property
+    def number_of_successful_runs(self):
+        return self.report_set.filter(result=Report.RESULT_SUCCESS).count()
+
+    @property
+    def task_result_url(self):
+        # TODO: This does not work for multiple tasks per device (T116)
+        for task in self.device_type.tasks.all():
+            result_url = task.get_formatted_result_url(self)
+            if result_url:
+                return result_url
 
 class Report(models.Model):
     class Meta:
