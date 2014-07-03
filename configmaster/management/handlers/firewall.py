@@ -313,15 +313,15 @@ class FirewallConfigBackupHandler(FirewallHandler):
             # Commit config changes
 
             git.add('-u')
-            commit_message = "Firewall config change on {}{}".format(
+            commit_message = u"Firewall config change on {}{}".format(
                 self.device.label,
-                " ({})".format(self.device.name) if self.device.name else "")
+                u" ({})".format(self.device.name) if self.device.name else "")
             changes = self._git_commit(commit_message)
 
             # Commit any new, previously untracked configs
 
             git.add('.')
-            commit_message = "Firewall config for %s added" % self.device.label
+            commit_message = u"Firewall config for %s added" % self.device.label
             changes |= self._git_commit(commit_message)
 
             return self._return_success("Config backup successful ({})".format(

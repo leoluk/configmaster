@@ -4,6 +4,7 @@ import traceback
 from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
 from configmaster.models import Device, Report
+from configmaster.views import DashboardView
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
 
@@ -55,7 +56,7 @@ class Command(BaseCommand):
                 self.stderr.write("Device %s does not exist, skipping" % label)
 
         if not devices:
-            devices = Device.objects.all()
+            devices = DashboardView.queryset
 
         call_after_completion = dict()
 

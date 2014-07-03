@@ -11,7 +11,7 @@ class DeviceAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Basic info", {
-            'fields': ('name', 'label', 'group', 'device_type')
+            'fields': ('name', 'label', 'hostname', 'group', 'device_type')
         }),
         ("Settings", {
             'fields': ('enabled', 'sync', 'credential', 'ssh_known_host', 'do_not_use_scp')
