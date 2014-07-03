@@ -96,7 +96,7 @@ class SSHRemoteControl(BaseRemoteControl):
         self.interact = pexpect.SSHClientInteraction(self.chan, timeout=self.cmd_timeout)
 
     def open_scp_channel(self):
-        self.scp = scp.SCPClient(self.transport)
+        self.scp = scp.SCPClient(self.transport, socket_timeout=self.cmd_timeout)
 
     def connect(self, username, password, open_command_channel=True,
                 open_scp_channel=False):
