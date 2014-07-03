@@ -42,13 +42,24 @@ class Command(BaseCommand):
     # The task runner logic should be decoupled from the management
     # command. This is required for T47 (manual runs).
 
-    help = "Config management run"
+    help = "Config management run. Optionally specify devices on the command line."
 
     # noinspection PyBroadException
     def handle(self, *args, **options):
+        devices = []
+
+        for label in args:
+            try:
+                devices.append(Device.objects.get(label=label))
+            except Device.DoesNotExist:
+                self.stderr.write("Device %s does not exist, skipping" % label)
+
+        if not devices:
+            devices = Device.objects.all()
+
         call_after_completion = dict()
 
-        for device in Device.objects.all():
+        for device in devices:
             if device.device_type is None:
                 self.stdout.write("Device %s has no device type, skipping..." % device.label)
                 continue
