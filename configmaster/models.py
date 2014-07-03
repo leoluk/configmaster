@@ -38,7 +38,7 @@ class ConnectionSetting(models.Model):
 class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
-
+    default_device_type = models.ForeignKey("DeviceType", null=True)
 
     def __unicode__(self):
         return self.name
