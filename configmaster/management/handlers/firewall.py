@@ -2,6 +2,8 @@ import codecs
 from contextlib import contextmanager
 from django.conf import settings
 import os
+from pipes import quote
+import re
 from sh import git
 from paramiko import SSHException
 from scp import SCPException
@@ -15,6 +17,9 @@ from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, 
     FirewallRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
+
+
+RE_MATCH_FIRST_WORD = re.compile(r'\b\w+\b')
 
 
 class SSHDeviceHandler(BaseHandler):
@@ -327,4 +332,28 @@ class FirewallConfigBackupHandler(FirewallHandler):
             return self._return_success("Config backup successful ({})".format(
                 "no changes" if not changes else "changes found"
             ))
+
+    @classmethod
+    def run_completed(cls):
+        super(FirewallConfigBackupHandler, cls).run_completed()
+        os.chdir(settings.TASK_FW_CONFIG_PATH)
+
+        for device_type in DeviceType.objects.all():
+            if not device_type.config_filter:
+                continue
+            filename = os.path.join(
+                settings.TASK_FW_CONFIG_PATH, "..",
+                'Meta', "{}_filter.txt".format(
+                    RE_MATCH_FIRST_WORD.findall(
+                        device_type.name.replace(" ", "_"))[0]))
+
+            with codecs.open(filename, 'w', 'utf8') as f:
+                f.write("# Automatically generated from database\n\n")
+                f.write(device_type.config_filter)
+
+            git.add("--", quote(filename))
+            cls._git_commit(
+                'Config filter for device type "%s" changed' % device_type.name)
+
+        git.push()
 
