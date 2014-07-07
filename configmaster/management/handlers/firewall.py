@@ -2,6 +2,7 @@ import codecs
 from contextlib import contextmanager
 from django.conf import settings
 import os
+import paramiko
 from pipes import quote
 import re
 from sh import git
@@ -40,7 +41,8 @@ class SSHDeviceHandler(BaseHandler):
             self.credential = self.device.device_type.credential
         if not self.device.device_type.connection_setting:
             self._fail("No connection setting for device")
-        elif not self.device.device_type.connection_setting.ssh_port:
+        elif not (self.device.device_type.connection_setting.ssh_port or
+                      self.device.device_type.connection_setting.use_ssh_config):
             self._fail("Invalid SSH port setting")
 
         if not self.credential or self.credential.type != Credential.TYPE_PLAINTEXT:
@@ -111,9 +113,29 @@ class NetworkDeviceHandler(SSHDeviceHandler):
 
         :rtype : FirewallRemoteControl
         """
+
+        if self.device.device_type.connection_setting.use_ssh_config:
+            parser = paramiko.SSHConfig()
+            parser.parse(open(settings.TASK_CONFIG_BACKUP_SSH_CONFIG))
+            config = parser.lookup(self.device.hostname)
+
+            if 'port' in config:
+                ssh_port = int(config['port'])
+            else:
+                ssh_port = 22
+
+            if 'config' in config:
+                ssh_hostname = config['hostname']
+            else:
+                ssh_hostname = self.device.hostname
+
+        else:
+            ssh_port = self.device.device_type.connection_setting.ssh_port
+            ssh_hostname = self.device.hostname
+
         return self._remote_control_class(
-            self.device.hostname,
-            self.device.device_type.connection_setting.ssh_port,
+            ssh_hostname,
+            ssh_port,
             *args, **kwargs)
 
     def _connect_ssh(self):
@@ -133,7 +155,16 @@ class NetworkDeviceHandler(SSHDeviceHandler):
 
 
 class SSHLoginTestHandler(NetworkDeviceHandler):
-    pass
+    def _connect_ssh(self):
+        self.connection.allocate_pty = True
+        super(SSHLoginTestHandler, self)._connect_ssh()
+
+    @property
+    def _remote_control_class(self):
+        return FirewallRemoteControl
+
+    def run(self):
+        return self._return_success("Login successful")
 
 
 class GuessFirewallTypeHandler(NetworkDeviceHandler):
@@ -343,7 +374,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             if not device_type.config_filter:
                 continue
             filename = os.path.join(
-                settings.TASK_CONFIG_BACKUP_PATH, "..",
+                settings.TASK_CONFIG_BACKUP_PATH,
                 'Meta', "{}_filter.txt".format(
                     RE_MATCH_FIRST_WORD.findall(
                         device_type.name.replace(" ", "_"))[0]))
