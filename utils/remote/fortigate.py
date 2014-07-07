@@ -47,8 +47,18 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
                 return True
 
     def read_config(self):
-        # TODO: extract exec_command boilerplate into generic method
+        """
+        Read the config from a Fortigate firewall using a SSH console
+        session and direct command execution. This eliminates the need to
+        disable the pager (but its output is still included and has to be
+        removed).
 
+        This feature is deprecated for Fortigate devices, as it has multiple
+        issues (see T124 and T52) and is no longer necessary (SCP config
+        backup available on all devices).
+        """
+
+        # TODO: extract exec_command boilerplate into generic method
         chan = self.transport.open_session()
         chan.settimeout(self.timeout)
         output_file = chan.makefile()

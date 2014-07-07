@@ -116,7 +116,9 @@ class Device(models.Model):
                                                                                    "device. Certain fields cannot be "
                                                                                    "edited if this flag is set.")
 
-    do_not_use_scp = models.BooleanField(help_text="Use an interactive SSH session instead of SCP",
+    do_not_use_scp = models.BooleanField(help_text='Use an interactive SSH session instead of SCP. '
+                                                   'For Fortigate devices, this is a "feature of '
+                                                   'last resort" (incomplete config).',
                                          verbose_name="Do not use SCP", default=False)
     credential = models.ForeignKey(Credential, help_text="Overrides group default.", null=True, blank=True)
 

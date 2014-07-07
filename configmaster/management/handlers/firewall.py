@@ -243,17 +243,10 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 # The 501-Permission Denied error indicates that the firewall
                 # does not support the feature or that it's disabled. The
                 # remote control has a enable_scp method, which could be used
-                # to automatically enable SCP. I think it would be better to
-                # do this in a separate task, so we'll just set a flag to use
-                # the conventional method on the next run (there is no
-                # RESULT_RETRY yet, T58).
+                # to automatically enable SCP.
 
                 if "501-" in e.args[0]:
-                    self.device.do_not_use_scp = True
-                    self.device.save()
-                    self._fail(
-                        "SCP not enabled or permission denied, retrying "
-                        "without SCP on next run")
+                    self._fail("SCP not enabled or permission denied")
                 else:
                     raise e
         else:
