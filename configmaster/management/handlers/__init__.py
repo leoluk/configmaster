@@ -2,4 +2,4 @@
 # here cannot be directly invoked.
 
 from base import BaseHandler
-from firewall import GuessFirewallTypeHandler, FirewallConfigBackupHandler
+from firewall import GuessFirewallTypeHandler, NetworkDeviceConfigBackupHandler
