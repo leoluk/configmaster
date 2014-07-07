@@ -3,7 +3,7 @@ import re
 import traceback
 from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
-from configmaster.models import Device, Report
+from configmaster.models import Device, Report, DeviceGroup
 from configmaster.views import DashboardView
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
@@ -43,7 +43,8 @@ class Command(BaseCommand):
     # The task runner logic should be decoupled from the management
     # command. This is required for T47 (manual runs).
 
-    help = "Config management run. Optionally specify devices on the command line."
+    help = "Config management run. Optionally specify devices or groups on" \
+           " the command line."
 
     # noinspection PyBroadException
     def handle(self, *args, **options):
@@ -53,7 +54,10 @@ class Command(BaseCommand):
             try:
                 devices.append(Device.objects.get(label=label))
             except Device.DoesNotExist:
-                self.stderr.write("Device %s does not exist, skipping" % label)
+                try:
+                    devices += DashboardView.queryset.filter(group__name=label)
+                except Device.DoesNotExist:
+                    self.stderr.write("Device/group %s does not exist, skipping" % label)
 
         if not devices:
             devices = DashboardView.queryset
