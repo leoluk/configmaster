@@ -232,18 +232,20 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         temp_dir = tempfile.mkdtemp()
         destination_file = '{}.txt'.format(self.device.label)
         temp_filename = os.path.join(temp_dir, destination_file)
-        filename = os.path.join(settings.TASK_FW_CONFIG_PATH, destination_file)
+        filename = os.path.join(
+            settings.TASK_CONFIG_BACKUP_PATH,
+            RE_MATCH_FIRST_WORD.findall(self.device.group.plural)[0],
+            destination_file)
 
         if not self.device.do_not_use_scp:
             try:
                 self.connection.open_scp_channel()
                 self.connection.read_config_scp(temp_filename)
             except SCPException, e:
-
-                # The 501-Permission Denied error indicates that the firewall
-                # does not support the feature or that it's disabled. The
-                # remote control has a enable_scp method, which could be used
-                # to automatically enable SCP.
+                # For Fortigate devices, the 501-Permission Denied error
+                # indicates that the feature is disabled. The remote control
+                # has a enable_scp method, which could be used to
+                # automatically enable SCP.
 
                 if "501-" in e.args[0]:
                     self._fail("SCP not enabled or permission denied")
@@ -304,23 +306,24 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
             # Git operations
 
-            os.chdir(settings.TASK_FW_CONFIG_PATH)
+            os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
 
-            if settings.TASK_FW_CONFIG_DISABLE_GIT:
+            if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
                 return self._return_success("Config backup successful")
 
             # Commit config changes
 
             git.add('-u')
-            commit_message = u"Firewall config change on {}{}".format(
-                self.device.label,
+            commit_message = u"{} config change on {}{}".format(
+                self.device.group, self.device.label,
                 u" ({})".format(self.device.name) if self.device.name else "")
             changes = self._git_commit(commit_message)
 
             # Commit any new, previously untracked configs
 
             git.add('.')
-            commit_message = u"Firewall config for %s added" % self.device.label
+            commit_message = u"{} config for {} added".format(
+                self.device.group, self.device.label)
             changes |= self._git_commit(commit_message)
 
             return self._return_success("Config backup successful ({})".format(
@@ -330,13 +333,13 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     @classmethod
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
-        os.chdir(settings.TASK_FW_CONFIG_PATH)
+        os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
 
         for device_type in DeviceType.objects.all():
             if not device_type.config_filter:
                 continue
             filename = os.path.join(
-                settings.TASK_FW_CONFIG_PATH, "..",
+                settings.TASK_CONFIG_BACKUP_PATH, "..",
                 'Meta', "{}_filter.txt".format(
                     RE_MATCH_FIRST_WORD.findall(
                         device_type.name.replace(" ", "_"))[0]))

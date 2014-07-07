@@ -58,7 +58,11 @@ class Command(BaseCommand):
         for label, data in pwsafe_export.iteritems():
             self.stdout.write("Processing %s..." % label)
 
-            group = DeviceGroup.objects.get_or_create(name=data['device_group'])[0]
+            try:
+                group = DeviceGroup.objects.get(name=data['device_group'])
+            except DeviceGroup.DoesNotExist:
+                self.stderr.write("Group %s does not exist" % data['device_group'])
+                continue
 
             try:
                 device = Device.objects.get(label=label)
