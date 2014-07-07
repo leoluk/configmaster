@@ -54,13 +54,16 @@ class Command(BaseCommand):
             try:
                 devices.append(Device.objects.get(label=label))
             except Device.DoesNotExist:
-                try:
-                    devices += DashboardView.queryset.filter(group__name=label)
-                except Device.DoesNotExist:
-                    self.stderr.write("Device/group %s does not exist, skipping" % label)
+                    group_members = DashboardView.queryset.filter(group__name=label)
+                    devices += group_members
+                    if not group_members:
+                        self.stderr.write("Device/group %s does not exist, skipping" % label)
 
-        if not devices:
+        if not args:
             devices = DashboardView.queryset
+        elif not devices:
+            self.stderr.write("No devices, aborting")
+            return
 
         call_after_completion = dict()
 
