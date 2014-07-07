@@ -29,10 +29,15 @@ class Credential(models.Model):
 
 class ConnectionSetting(models.Model):
     name = models.CharField(max_length=100)
-    ssh_port = models.IntegerField(verbose_name="SSH port")
+    ssh_port = models.IntegerField(verbose_name="SSH port", null=True, blank=True)
+    use_ssh_config = models.BooleanField(verbose_name="Use ssh_config",
+                                         default=False)
 
     def __unicode__(self):
-        return "{} (SSH: port {})".format(self.name, self.ssh_port)
+        if self.ssh_port:
+            return "{} (SSH: port {})".format(self.name, self.ssh_port)
+        else:
+            return self.name
 
 
 class DeviceGroup(models.Model):
