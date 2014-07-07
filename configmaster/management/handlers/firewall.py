@@ -132,6 +132,10 @@ class NetworkDeviceHandler(SSHDeviceHandler):
             self.connection.close()
 
 
+class SSHLoginTestHandler(NetworkDeviceHandler):
+    pass
+
+
 class GuessFirewallTypeHandler(NetworkDeviceHandler):
     def __init__(self, device):
         """
