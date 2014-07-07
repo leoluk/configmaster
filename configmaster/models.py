@@ -37,8 +37,9 @@ class ConnectionSetting(models.Model):
 
 class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
+    plural = models.CharField(max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
-    default_device_type = models.ForeignKey("DeviceType", null=True)
+    default_device_type = models.ForeignKey("DeviceType", null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -52,8 +53,8 @@ class Task(models.Model):
     result_url = models.CharField(max_length=100, verbose_name="Result URL", null=True, blank=True,
                                   help_text="A URL which points to the result of a task. Will be displayed in "
                                             "the frontend if the task has been successfully run at least once. "
-                                            "The following placeholders are available: {label}, {hostname}, "
-                                            "{device_type} and {group}.")
+                                            "<br/>The following placeholders are available: {label}, {hostname}, "
+                                            "{device_type}, {group} and {group_plural}.")
 
     def __unicode__(self):
         return self.name
@@ -66,7 +67,8 @@ class Task(models.Model):
             label=device.label,
             hostname=device.hostname,
             device_type=device.device_type,
-            group=device.group
+            group=device.group,
+            group_plural=device.group.plural
         )
 
 
@@ -139,7 +141,7 @@ class Device(models.Model):
                                                    "changed host key.")
 
     def __unicode__(self):
-        return self.name
+        return self.name if self.name else self.hostname
 
     def is_enabled(self):
         return self.enabled and self.group.enabled

@@ -29,8 +29,8 @@ INTERNAL_IPS = (
 PWSAFE_EXPORT_URL = "https://pwsafe.continum.net/pwsafe/configmaster_export"
 PWSAFE_DEVICE_URL = "https://pwsafe.continum.net/pwsafe/devices/#%s"
 PWSAFE_ASSETDB_REDIRECT = "https://pwsafe.continum.net/pwsafe/asset_db_lookup?device=%s"
-TASK_FW_CONFIG_PATH = "/home/configmaster/continum-network-configs/Firewalls/"
-TASK_FW_CONFIG_DISABLE_GIT = False
+TASK_CONFIG_BACKUP_PATH = "/home/configmaster/continum-network-configs/"
+TASK_CONFIG_BACKUP_DISABLE_GIT = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/

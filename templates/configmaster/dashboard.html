@@ -28,7 +28,7 @@
             <tr>
                 <td>{{ device.group }}</td>
                 <td>{{ device.label }}</td>
-                <td>{{ device.name }}</td>
+                <td>{{ device }}</td>
                 {% with device.report_set.latest as report %}
                     <td>
                         {% if not device.is_enabled %}
