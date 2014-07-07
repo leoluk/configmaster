@@ -73,45 +73,45 @@ class SSHDeviceHandler(BaseHandler):
                 yield
 
 
-class FirewallHandler(SSHDeviceHandler):
-    FW_RC_CLASSES = {
+class NetworkDeviceHandler(SSHDeviceHandler):
+    RC_CLASSES = {
         u"Fortigate": FortigateRemoteControl,
         u"Juniper": JuniperRemoteControl
     }
 
     def __init__(self, device):
         """
-        A base class for SSH-based Firewall handlers. Chooses the right
+        A base class for SSH-based network device handlers. Chooses the right
         remote control class, instantiates it as self.connection and
-        connects and authenticates with the Firewall using the credential
+        connects and authenticates with the device using the credential
         from the database.
         """
-        super(FirewallHandler, self).__init__(device)
+        super(NetworkDeviceHandler, self).__init__(device)
 
         self.connection = self._get_fw_remote_control()
         """:type : FirewallRemoteControl"""
 
     @property
-    def _fw_remote_control_class(self):
+    def _remote_control_class(self):
         """
-        Returns the correct Firewall remote control class. The device type <->
+        Returns the correct remote control class. The device type <->
         class mapping is defined in the FW_RC_CLASSES dictionary.
         """
         try:
-            return self.FW_RC_CLASSES[unicode(self.device.device_type.name)]
+            return self.RC_CLASSES[unicode(self.device.device_type.name)]
         except KeyError:
-            self._fail("No firewall controller for device type %s",
+            self._fail("No device controller for device type %s",
                        self.device.device_type)
 
 
     def _get_fw_remote_control(self, *args, **kwargs):
         """
-        Instantiates and returns the correct firewall remote controller for the
+        Instantiates and returns the correct remote controller for the
         device's device_type.
 
         :rtype : FirewallRemoteControl
         """
-        return self._fw_remote_control_class(
+        return self._remote_control_class(
             self.device.hostname,
             self.device.device_type.connection_setting.ssh_port,
             *args, **kwargs)
@@ -126,13 +126,13 @@ class FirewallHandler(SSHDeviceHandler):
 
     @contextmanager
     def run_wrapper(self, *args, **kwargs):
-        with super(FirewallHandler, self).run_wrapper(*args, **kwargs):
+        with super(NetworkDeviceHandler, self).run_wrapper(*args, **kwargs):
             self._connect_ssh()
             yield
             self.connection.close()
 
 
-class GuessFirewallTypeHandler(FirewallHandler):
+class GuessFirewallTypeHandler(NetworkDeviceHandler):
     def __init__(self, device):
         """
         This handler guesses the Firewall type. Right now, it detects
@@ -147,7 +147,7 @@ class GuessFirewallTypeHandler(FirewallHandler):
         super(GuessFirewallTypeHandler, self).__init__(device)
 
     @property
-    def _fw_remote_control_class(self):
+    def _remote_control_class(self):
         # Bypass the automatic mapping
         return GuessingFirewallRemoteControl
 
@@ -163,7 +163,7 @@ class GuessFirewallTypeHandler(FirewallHandler):
             return self._return_success("Guess: %s", guess)
 
 
-class FirewallConfigBackupHandler(FirewallHandler):
+class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def __init__(self, device):
         """
         This device handler does a config backup for Fortigate and Juniper
@@ -171,16 +171,16 @@ class FirewallConfigBackupHandler(FirewallHandler):
         the config using an interactive session or the SCP subsystem,
         if it is supported and enabled for a particular device. It commits
         the config files to a git repository if the
-        iTASK_FW_CONFIG_DISABLE_GIT setting is enabled.
+        TASK_FW_CONFIG_DISABLE_GIT setting is enabled.
         """
 
-        super(FirewallConfigBackupHandler, self).__init__(device)
+        super(NetworkDeviceConfigBackupHandler, self).__init__(device)
 
     def _connect_ssh(self):
         """
-        Override the inherited login method and instruct the firewall remote
-        control class to not open any SSH channels. Some firewalls (Juniper)
-        only support one channel per connection.
+        Override the inherited login method and instruct the remote control
+        class to not open any SSH channels. Some firewalls (Juniper) only
+        support one channel per connection.
         """
         self.connection.connect(self.credential.username,
                                 self.credential.password,
@@ -252,7 +252,8 @@ class FirewallConfigBackupHandler(FirewallHandler):
                     self.device.do_not_use_scp = True
                     self.device.save()
                     self._fail(
-                        "SCP not enabled or permission denied, retrying without SCP on next run")
+                        "SCP not enabled or permission denied, retrying "
+                        "without SCP on next run")
                 else:
                     raise e
         else:
@@ -335,7 +336,7 @@ class FirewallConfigBackupHandler(FirewallHandler):
 
     @classmethod
     def run_completed(cls):
-        super(FirewallConfigBackupHandler, cls).run_completed()
+        super(NetworkDeviceConfigBackupHandler, cls).run_completed()
         os.chdir(settings.TASK_FW_CONFIG_PATH)
 
         for device_type in DeviceType.objects.all():
