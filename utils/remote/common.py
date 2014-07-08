@@ -136,7 +136,7 @@ class SSHRemoteControl(BaseRemoteControl):
 
 
 class FirewallRemoteControl(SSHRemoteControl):
-    def __init__(self, hostname, port=22, hostkey=None, timeout=5, cmd_timeout=15):
+    def __init__(self, hostname, port=22, hostkey=None, timeout=5, cmd_timeout=20):
         super(FirewallRemoteControl, self).__init__(hostname, port, hostkey, timeout, cmd_timeout)
         self.allocate_pty = False
 
