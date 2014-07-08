@@ -106,9 +106,10 @@ class NetworkDeviceHandler(SSHDeviceHandler):
                        self.device.device_type)
 
 
+    # noinspection PyTypeChecker
     def _get_fw_remote_control(self, *args, **kwargs):
         """
-        Instantiates and returns the correct remote controller for the
+        Instantiates and returns the correct remote controller for the        # noinspection PyTypeChecker
         device's device_type.
 
         :rtype : FirewallRemoteControl
@@ -124,7 +125,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
             else:
                 ssh_port = 22
 
-            if 'config' in config:
+            if 'hostname' in config:
                 ssh_hostname = config['hostname']
             else:
                 ssh_hostname = self.device.hostname
@@ -156,6 +157,8 @@ class NetworkDeviceHandler(SSHDeviceHandler):
 
 class SSHLoginTestHandler(NetworkDeviceHandler):
     def _connect_ssh(self):
+        # ProCurve switches close the channel if a shell without TTY is
+        # requested.
         self.connection.allocate_pty = True
         super(SSHLoginTestHandler, self)._connect_ssh()
 
