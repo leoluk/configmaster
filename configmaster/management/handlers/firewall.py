@@ -78,7 +78,7 @@ class SSHDeviceHandler(BaseHandler):
 class NetworkDeviceHandler(SSHDeviceHandler):
     RC_CLASSES = {
         u"Fortigate": FortigateRemoteControl,
-        u"Juniper": JuniperRemoteControl
+        u"Juniper SSG": JuniperRemoteControl
     }
 
     def __init__(self, device):
@@ -328,7 +328,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             # Juniper SSG firewalls encode their config as ISO-8859-2.
             # Convert it to UTF8 so that all configs use the same encoding.
 
-            if self.device.device_type.name == "Juniper":
+            if self.device.device_type.name == "Juniper SSG":
                 with codecs.open(temp_filename, encoding="iso-8859-2") as f:
                     raw_config = f.read()
                 with codecs.open(temp_filename, 'w', encoding="utf8") as f:
