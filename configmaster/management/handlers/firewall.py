@@ -373,6 +373,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
         os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
 
+        if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+            return
+
         for device_type in DeviceType.objects.all():
             if not device_type.config_filter:
                 continue
