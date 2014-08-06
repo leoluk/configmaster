@@ -1,0 +1,17 @@
+{
+  "exclude": "(^.+/migrations/|^utils/contrib/)",
+  "linters": {
+    "sample": {
+      "type": "flake8",
+      "severity": {
+	"E501": "disabled"
+      },
+      "severity.rules": {
+        "(^E)": "warning",
+        "(^W)": "advice"
+      },
+      "include": "(\\.py$)"
+    }
+  }
+}
+
