@@ -8,7 +8,6 @@ django-dajaxice==0.6
 django-icons-famfamfam==0.2-1
 ecdsa==0.11
 paramiko==1.14.0
-scp==0.8.0
 scpclient==0.5
 sh==1.09
 unicodecsv==0.9.4
