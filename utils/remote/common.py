@@ -1,11 +1,9 @@
 from contextlib import contextmanager
-import scp
 import socket
 import paramiko
 from subprocess import list2cmdline
 
-from utils.contrib import pexpect
-
+from utils.contrib import scp, pexpect
 
 def sanitize(value):
     return list2cmdline([value])
