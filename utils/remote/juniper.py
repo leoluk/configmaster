@@ -14,7 +14,7 @@ RE_SYSINFO = re.compile(
 .*^Software Version:\s+(?P<swrev>[^\s,]+).*$""", re.DOTALL | re.MULTILINE)
 
 
-class JuniperRemoteControl(common.FirewallRemoteControl):
+class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
         super(JuniperRemoteControl, self).__init__(*args, **kwargs)
 
@@ -87,12 +87,16 @@ class JuniperRemoteControl(common.FirewallRemoteControl):
     def save_and_apply(self):
         self.run_command("save")
 
-    def read_config_scp(self, destination):
+    def read_config_scp(self, destination, startup_config=False):
+        if startup_config:
+            raise NotImplementedError("Juniper SSG does not support"
+                                      "startup config copy over SCP")
         self.scp.get("ns_sys_config", destination)
 
-    def read_config(self):
+    def read_config(self, startup_config=False):
         with self.ctx_term_setup():
-            self.run_command("get config")
+            self.run_command("get config" +
+                             (" saved"  if startup_config else ""))
             return self.interact.current_output_clean.strip("ssg5-serial->").strip()
 
     def read_sysinfo(self):

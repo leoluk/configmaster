@@ -7,9 +7,6 @@ from subprocess import list2cmdline
 from utils import pexpect
 
 
-__author__ = 'lschabel'
-
-
 def sanitize(value):
     return list2cmdline([value])
 
@@ -135,9 +132,9 @@ class SSHRemoteControl(BaseRemoteControl):
                 transport.close()
 
 
-class FirewallRemoteControl(SSHRemoteControl):
+class NetworkDeviceRemoteControl(SSHRemoteControl):
     def __init__(self, hostname, port=22, hostkey=None, timeout=5, cmd_timeout=20):
-        super(FirewallRemoteControl, self).__init__(hostname, port, hostkey, timeout, cmd_timeout)
+        super(NetworkDeviceRemoteControl, self).__init__(hostname, port, hostkey, timeout, cmd_timeout)
         self.allocate_pty = False
 
     def change_admin_password(self, new_password, verify=True):
@@ -156,10 +153,10 @@ class FirewallRemoteControl(SSHRemoteControl):
     def expect_prompt(self):
         raise NotImplementedError
 
-    def read_config(self):
+    def read_config(self, startup_config=False):
         raise NotImplementedError
 
-    def read_config_scp(self, destination):
+    def read_config_scp(self, destination, startup_config=False):
         raise NotImplementedError
 
     def setup_terminal(self):
@@ -182,7 +179,7 @@ class FirewallRemoteControl(SSHRemoteControl):
             self.teardown_terminal()
 
 
-class GuessingFirewallRemoteControl(FirewallRemoteControl):
+class GuessingFirewallRemoteControl(NetworkDeviceRemoteControl):
     def guess_type(self):
         prompt = self.chan.recv(1024)
 
