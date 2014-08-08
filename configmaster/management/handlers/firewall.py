@@ -14,10 +14,12 @@ import tempfile
 
 from configmaster.management.handlers import BaseHandler
 from configmaster.models import Credential, DeviceType
+from utils.remote.brocade import BrocadeRemoteControl
 from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, \
-    FirewallRemoteControl
+    NetworkDeviceRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
+from utils.remote.procurve import ProCurveRemoteControl
 
 
 RE_MATCH_FIRST_WORD = re.compile(r'\b\w+\b')
@@ -78,7 +80,14 @@ class SSHDeviceHandler(BaseHandler):
 class NetworkDeviceHandler(SSHDeviceHandler):
     RC_CLASSES = {
         u"Fortigate": FortigateRemoteControl,
-        u"Juniper SSG": JuniperRemoteControl
+        u"Juniper SSG": JuniperRemoteControl,
+        u"HP ProCurve": ProCurveRemoteControl,
+        # Brocade
+        u"Brocade *Iron": BrocadeRemoteControl,
+        u"NetIron CER": BrocadeRemoteControl,
+        u"ServerIron ADX": BrocadeRemoteControl,
+        u"FastIron GS": BrocadeRemoteControl,
+        u"ServerIron XL": BrocadeRemoteControl,
     }
 
     def __init__(self, device):
@@ -91,7 +100,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         super(NetworkDeviceHandler, self).__init__(device)
 
         self.connection = self._get_fw_remote_control()
-        """:type : FirewallRemoteControl"""
+        """:type : NetworkDeviceRemoteControl"""
 
     @property
     def _remote_control_class(self):
@@ -112,7 +121,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         Instantiates and returns the correct remote controller for the        # noinspection PyTypeChecker
         device's device_type.
 
-        :rtype : FirewallRemoteControl
+        :rtype : NetworkDeviceRemoteControl
         """
 
         if self.device.device_type.connection_setting.use_ssh_config:
@@ -164,7 +173,7 @@ class SSHLoginTestHandler(NetworkDeviceHandler):
 
     @property
     def _remote_control_class(self):
-        return FirewallRemoteControl
+        return NetworkDeviceRemoteControl
 
     def run(self):
         return self._return_success("Login successful")
@@ -204,12 +213,12 @@ class GuessFirewallTypeHandler(NetworkDeviceHandler):
 class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def __init__(self, device):
         """
-        This device handler does a config backup for Fortigate and Juniper
-        devices and writes the config files to the file system. It can get
-        the config using an interactive session or the SCP subsystem,
-        if it is supported and enabled for a particular device. It commits
-        the config files to a git repository if the
-        TASK_FW_CONFIG_DISABLE_GIT setting is enabled.
+        This device handler does a config backup for network devices and
+        writes the config files to the file system. It can get the config
+        using an interactive session or the SCP subsystem, if it is
+        supported and enabled for a particular device. It commits the config
+        files to a git repository if the TASK_FW_CONFIG_DISABLE_GIT setting
+        is enabled.
         """
 
         super(NetworkDeviceConfigBackupHandler, self).__init__(device)
@@ -274,6 +283,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             settings.TASK_CONFIG_BACKUP_PATH,
             RE_MATCH_FIRST_WORD.findall(self.device.group.plural)[0],
             destination_file)
+
+        if not os.path.exists(os.path.dirname(filename)):
+            os.mkdir(os.path.dirname(filename))
 
         if not self.device.do_not_use_scp:
             try:

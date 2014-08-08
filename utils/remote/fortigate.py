@@ -10,7 +10,7 @@ RE_SYSINFO = re.compile(r""".*^.*?Version:\s+(?P<model>.+?)\s(?P<swrev>.+?)$.*
 ^Serial-Number:\s+(?P<serial>FG.+?)$""", re.DOTALL | re.MULTILINE)
 
 
-class FortigateRemoteControl(common.FirewallRemoteControl):
+class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
         super(FortigateRemoteControl, self).__init__(*args, **kwargs)
 
@@ -46,7 +46,7 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
             else:
                 return True
 
-    def read_config(self):
+    def read_config(self, startup_config=False):
         """
         Read the config from a Fortigate firewall using a SSH console
         session and direct command execution. This eliminates the need to
@@ -58,6 +58,10 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
         backup available on all devices).
         """
 
+        if startup_config:
+            raise NotImplementedError("Fortigate firewalls only have one"
+                                      "configuration")
+
         # TODO: extract exec_command boilerplate into generic method
         chan = self.transport.open_session()
         chan.settimeout(self.timeout)
@@ -68,7 +72,10 @@ class FortigateRemoteControl(common.FirewallRemoteControl):
         prompt = output[-10:].split('\n')[-1]
         return output.strip(prompt).replace("--More-- \r         \r", "")
 
-    def read_config_scp(self, destination):
+    def read_config_scp(self, destination, startup_config=False):
+        if startup_config:
+            raise NotImplementedError("Fortigate firewalls only have one"
+                                      "configuration")
         self.scp.get("sys_config", destination)
 
     def add_admin(self, username, password, privilege="prof_admin", role=None, sshkey=None, ssh_only_key=False,
