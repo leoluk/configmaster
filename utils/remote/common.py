@@ -4,7 +4,7 @@ import socket
 import paramiko
 from subprocess import list2cmdline
 
-from utils import pexpect
+from utils.contrib import pexpect
 
 
 def sanitize(value):
