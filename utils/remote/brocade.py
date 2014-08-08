@@ -1,4 +1,3 @@
-import paramiko
 from utils.remote import common
 
 
