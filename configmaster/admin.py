@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task, ConnectionSetting
 from configmaster.models import Device
-
+import adminactions.actions as actions
 
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("label", "name", "hostname", "group", "device_type", "enabled")
@@ -86,3 +86,5 @@ admin.site.register(Task)
 admin.site.register(ConnectionSetting)
 admin.site.register(Credential, CredentialAdmin)
 admin.site.register(Report, ReportAdmin)
+
+actions.add_to_site(admin.site)
