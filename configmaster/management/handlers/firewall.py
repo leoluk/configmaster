@@ -335,7 +335,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                     raw_config = regex.sub('', raw_config)
 
                 with open(temp_filename, 'w') as f:
-                    f.write(raw_config)
+                    f.write(raw_config.strip('\x00'))
 
             # Juniper SSG firewalls encode their config as ISO-8859-2.
             # Convert it to UTF8 so that all configs use the same encoding.
