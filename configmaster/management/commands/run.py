@@ -44,24 +44,38 @@ class Command(BaseCommand):
     # command. This is required for T47 (manual runs).
 
     help = "Config management run. Optionally specify devices or groups on" \
-           " the command line."
+           " the command line. Exclude devices/groups by prepending them" \
+           " with %."
+
+    def _resolve_arg(self, argument):
+        try:
+            return [Device.objects.get(label=argument)]
+        except Device.DoesNotExist:
+            group_members = DashboardView.queryset.filter(group__name=argument)
+            if group_members:
+                return group_members
+            else:
+                self.stderr.write("Device/group %s does not exist, skipping" % argument)
+                return []
 
     # noinspection PyBroadException
     def handle(self, *args, **options):
         devices = []
+        excluded_devices = []
 
         for label in args:
-            try:
-                devices.append(Device.objects.get(label=label))
-            except Device.DoesNotExist:
-                    group_members = DashboardView.queryset.filter(group__name=label)
-                    devices += group_members
-                    if not group_members:
-                        self.stderr.write("Device/group %s does not exist, skipping" % label)
+            if label.startswith('%'):
+                excluded_devices += self._resolve_arg(label[1:])
+            else:
+                devices += self._resolve_arg(label)
 
         if not args:
             devices = DashboardView.queryset
-        elif not devices:
+
+        for device in excluded_devices:
+            devices.remove(device)
+
+        if not devices:
             self.stderr.write("No devices, aborting")
             return
 
