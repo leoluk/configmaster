@@ -20,9 +20,9 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
-INTERNAL_IPS = (
-    "192.168.50.50"
-)
+#INTERNAL_IPS = (
+#    "192.168.50.50",
+#)
 
 # Custom settings
 
@@ -62,7 +62,8 @@ INSTALLED_APPS = (
     'south',
     'icons_famfamfam',
     'dajaxice',
-    'dajax'
+    'dajax',
+    'debug_toolbar',
 )
 
 MIDDLEWARE_CLASSES = (

@@ -18,7 +18,7 @@ class DeviceAdmin(admin.ModelAdmin):
         }),
         ('Config management data', {
             'description': "Will get overwritten during the next run.",
-            'fields': ('data_model', 'data_firmware', 'data_serial'),
+            'fields': ('status', 'data_model', 'data_firmware', 'data_serial'),
         })
     )
 
