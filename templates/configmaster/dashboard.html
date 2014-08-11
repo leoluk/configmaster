@@ -29,19 +29,21 @@
                 <td>{{ device.group }}</td>
                 <td>{{ device.label }}</td>
                 <td>{{ device }}</td>
-                {% with device.report_set.latest as report %}
-                    <td>
-                        {% if not device.is_enabled %}
-                            {% icon 'cog' %} Disabled
-                        {% elif not report %}
-                            {% icon 'error' %} No report found
-                        {% elif report.result_is_success %}
-                            {% icon 'tick' %} {{ report.output }}
-                        {% else %}
-                            {% icon 'cancel' %}
-                            {{ report.output | truncatechars:60 }}
-                        {% endif %}
-                    </td>
+                {% with device.latest_report as report %}
+                    {% with device.status as status %}
+                        <td>
+                            {% if status == device.STATUS_DISABLED %}
+                                {% icon 'cog' %} Disabled
+                            {% elif status == device.STATUS_NO_REPORT %}
+                                {% icon 'error' %} No report found
+                            {% elif status == device.STATUS_SUCCESS %}
+                                {% icon 'tick' %} {{ report.output }}
+                            {% elif status == device.STATUS_ERROR %}
+                                {% icon 'cancel' %}
+                                {{ report.output | truncatechars:60 }}
+                            {% endif %}
+                        </td>
+                    {% endwith %}
                     <td>
                         {{ report.date | naturaltime }}
                     </td>

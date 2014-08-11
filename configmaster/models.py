@@ -113,6 +113,19 @@ class DeviceType(models.Model):
 
 
 class Device(models.Model):
+
+    STATUS_DISABLED = 1
+    STATUS_SUCCESS = 2
+    STATUS_NO_REPORT = 3
+    STATUS_ERROR = 4
+
+    STATUS_CHOICES = (
+        (STATUS_DISABLED, "Disabled"),
+        (STATUS_SUCCESS, "Success"),
+        (STATUS_NO_REPORT, "No report"),
+        (STATUS_ERROR, "Error")
+    )
+
     name = models.CharField("Device name", max_length=100, blank=True)
     label = models.CharField("Service label", max_length=4, unique=True)
     hostname = models.CharField("Host name", max_length=200, blank=True)
@@ -135,6 +148,9 @@ class Device(models.Model):
     data_model = models.CharField("Device model", max_length=100, blank=True)
     data_firmware = models.CharField("Firmware revision", max_length=100, blank=True)
     data_serial = models.CharField("Serial number", max_length=100, blank=True)
+
+    status = models.IntegerField(choices=STATUS_CHOICES, editable=False, null=True, blank=True)
+    latest_report = models.ForeignKey("Report", null=True, blank=True, related_query_name="latest_report")
 
     # Paramiko is configured to use the OpenSSH known_hosts file. This flag
     # is needed because CM runs are non- interactive by default, so we need
@@ -170,6 +186,25 @@ class Device(models.Model):
             result_url = task.get_formatted_result_url(self)
             if result_url:
                 return result_url
+
+    def _get_status(self):
+        if not self.is_enabled():
+            return self.STATUS_DISABLED
+
+        try:
+            report = self.report_set.latest()
+            self.latest_report = report
+        except Report.DoesNotExist:
+            return self.STATUS_NO_REPORT
+
+        if report.result_is_success():
+            return self.STATUS_SUCCESS
+        else:
+            return self.STATUS_ERROR
+
+    def set_status(self):
+        self.status = self._get_status()
+
 
 class Report(models.Model):
     class Meta:
