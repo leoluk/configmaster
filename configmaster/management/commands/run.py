@@ -69,8 +69,8 @@ class Command(BaseCommand):
             else:
                 devices += self._resolve_arg(label)
 
-        if not args:
-            devices = DashboardView.queryset
+        if not filter(lambda x: not x.startswith('%'), args):
+            devices = list(DashboardView.queryset)
 
         for device in excluded_devices:
             devices.remove(device)
