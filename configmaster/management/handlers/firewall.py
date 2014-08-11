@@ -281,8 +281,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         temp_filename = os.path.join(temp_dir, destination_file)
         filename = os.path.join(
             settings.TASK_CONFIG_BACKUP_PATH,
-            RE_MATCH_FIRST_WORD.findall(self.device.group.plural)[0],
-            destination_file)
+            RE_MATCH_FIRST_WORD.findall(
+                self.device.group.plural.replace(' ', ''))[0],
+                destination_file)
 
         if not os.path.exists(os.path.dirname(filename)):
             os.mkdir(os.path.dirname(filename))
