@@ -25,67 +25,78 @@
             <th>Actions</th>
         </tr>
         {% for device in object_list %}
-            <tr>
-                <td>{{ device.group }}</td>
-                <td>{{ device.label }}</td>
-                <td>{{ device }}</td>
-                {% with device.latest_report as report %}
-                    {% with device.status as status %}
-                        <td>
-                            {% if status == device.STATUS_DISABLED %}
-                                {% icon 'cog' %} Disabled
-                            {% elif status == device.STATUS_NO_REPORT %}
-                                {% icon 'error' %} No report found
-                            {% elif status == device.STATUS_SUCCESS %}
-                                {% icon 'tick' %} {{ report.output }}
-                            {% elif status == device.STATUS_ERROR %}
-                                {% icon 'cancel' %}
-                                {{ report.output | truncatechars:60 }}
-                            {% endif %}
-                        </td>
-                    {% endwith %}
-                    <td>
-                        {{ report.date | naturaltime }}
-                    </td>
-                    <td>
-                        <div class="actions">
-                            <a class="action" data-toggle="tooltip" title="Edit device" target="_blank"
-                               href="{% url "admin:configmaster_device_change" device.id %}">
-                                {% icon "wrench" %}
-                            </a>
-                            {% if report %}
-                                <a class="action" data-toggle="tooltip" title="View report" target="_blank"
-                                   href="{% url "admin:configmaster_report_change" report.id %}">
-                                {% icon "report" %}
+            {% for task, status, report in device.latest_reports %}
+                {% with forloop.counter0 as additional_task %}
+                    {% if additional_task %}
+                        <tr class="additional_task">
+                            <td></td>
+                            <td></td>
+                            <td class="additional_task_note">
+                                {{ task.name }}:
+                            </td>
                             {% else %}
-                                <a>{% icon "report" classes="img_disabled" %}
-                            {% endif %}
-                            </a>
-                            {% if device.is_enabled %}
-                                <a class="action" data-toggle="tooltip" title="Run now">
-                                {% icon "cog" classes="img_disabled" %}
-                            {% else %}
-                                <a>
-                                {% icon "cog" classes="img_disabled" %}
-                            {% endif %}
-                            </a>
-                            {% if device.number_of_successful_runs and device.task_result_url %}
+                        <tr>
+                        <td>{{ device.group }}</td>
+                        <td>{{ device.label }}</td>
+                        <td>{{ device }}</td>
+                    {% endif %}
+                <td>
+                    {% if status == device.STATUS_DISABLED %}
+                        {% icon 'cog' %} Disabled
+                    {% elif status == device.STATUS_NO_REPORT %}
+                        {% icon 'error' %} No report found
+                    {% elif status == device.STATUS_SUCCESS %}
+                        {% icon 'tick' %} {{ report.output }}
+                    {% elif status == device.STATUS_ERROR %}
+                        {% icon 'cancel' %}
+                        {{ report.output | truncatechars:60 }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ report.date | naturaltime }}
+                </td>
+                <td>
+                    <div class="actions">
+                        <a class="action" data-toggle="tooltip" title="Edit device" target="_blank"
+                           href="{% url "admin:configmaster_device_change" device.id %}">
+                            {% icon "wrench" %}
+                        </a>
+                        {% if report %}
+                            <a class="action" data-toggle="tooltip" title="View report" target="_blank"
+                               href="{% url "admin:configmaster_report_change" report.id %}">
+                            {% icon "report" %}
+                        {% else %}
+                            <a>{% icon "report" classes="img_disabled" %}
+                        {% endif %}
+                        </a>
+                        {% if device.is_enabled %}
+                            <!--<a class="action" data-toggle="tooltip" title="Run now">-->
+                            {% icon "cog" classes="img_disabled" %}
+                        {% else %}
+                            <a>
+                            {% icon "cog" classes="img_disabled" %}
+                        {% endif %}
+                        </a>
+                        {% with report.result_url as url %}
+                            {% if device.number_of_successful_runs and url %}
                                 <a class="action" data-toggle="tooltip" title="Go to task result"
-                                   href="{{ device.task_result_url }}" target="_blank">
+                                   href="{{ url }}" target="_blank">
                                 {% icon "page_go" %}
                             {% else %}
                                 <a>
                                 {% icon "page_go" classes="img_disabled" %}
                             {% endif %}
-                            </a>
-                            <a class="action" data-toggle="tooltip" title="AssetDB lookup"
-                               href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
-                            <a class="action" data-toggle="tooltip" title="PWSafe lookup"
-                               href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
-                        </div>
-                    </td>
+                        </a>
+                        {% endwith %}
+                        <a class="action" data-toggle="tooltip" title="AssetDB lookup"
+                           href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+                        <a class="action" data-toggle="tooltip" title="PWSafe lookup"
+                           href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
+                    </div>
+                </td>
+                </tr>
                 {% endwith %}
-            </tr>
+            {% endfor %}
         {% endfor %}
     </table>
 

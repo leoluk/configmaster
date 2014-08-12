@@ -55,6 +55,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, default="")
     class_name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
+    hide_if_successful = models.BooleanField(default=False)
     result_url = models.CharField(max_length=100, verbose_name="Result URL", null=True, blank=True,
                                   help_text="A URL which points to the result of a task. Will be displayed in "
                                             "the frontend if the task has been successfully run at least once. "
@@ -149,9 +150,6 @@ class Device(models.Model):
     data_firmware = models.CharField("Firmware revision", max_length=100, blank=True)
     data_serial = models.CharField("Serial number", max_length=100, blank=True)
 
-    status = models.IntegerField(choices=STATUS_CHOICES, editable=False, null=True, blank=True)
-    latest_report = models.ForeignKey("Report", null=True, blank=True, related_query_name="latest_report")
-
     # Paramiko is configured to use the OpenSSH known_hosts file. This flag
     # is needed because CM runs are non- interactive by default, so we need
     # another way to approve host key changes.
@@ -179,31 +177,43 @@ class Device(models.Model):
     def number_of_successful_runs(self):
         return self.report_set.filter(result=Report.RESULT_SUCCESS).count()
 
-    @property
-    def task_result_url(self):
-        # TODO: This does not work for multiple tasks per device (T116)
-        for task in self.device_type.tasks.all():
-            result_url = task.get_formatted_result_url(self)
-            if result_url:
-                return result_url
+    def get_latest_report_for_task(self, task):
+        try:
+            report = self.report_set.filter(task=task).latest()
+        except Report.DoesNotExist:
+            report = None
+        return report
 
-    def _get_status(self):
+    @property
+    def latest_reports(self):
+        """
+        Generate a list of (task, status, report) tuples with the latest
+        report for each assigned task of the device.
+
+        Called from the dashboard view template.
+        """
+        reports = []
+        if not self.device_type:
+            return
+        for task in self.device_type.tasks.all():
+            report = self.get_latest_report_for_task(task)
+            status = self.get_status_for_report(report)
+            if task.hide_if_successful and status == self.STATUS_SUCCESS:
+                continue
+            reports.append((task, status, report))
+        return reports
+
+    def get_status_for_report(self, report):
         if not self.is_enabled():
             return self.STATUS_DISABLED
 
-        try:
-            report = self.report_set.latest()
-            self.latest_report = report
-        except Report.DoesNotExist:
+        if not report:
             return self.STATUS_NO_REPORT
 
         if report.result_is_success():
             return self.STATUS_SUCCESS
         else:
             return self.STATUS_ERROR
-
-    def set_status(self):
-        self.status = self._get_status()
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
@@ -234,3 +244,7 @@ class Report(models.Model):
 
     def result_is_success(self):
         return self.result == Report.RESULT_SUCCESS
+
+    @property
+    def result_url(self):
+        return self.task.get_formatted_result_url(self.device)
