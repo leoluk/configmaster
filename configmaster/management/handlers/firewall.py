@@ -271,23 +271,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         return changes
 
-    def run(self, *args, **kwargs):
-
-        # Create a temporary directory to prevent accidental overwrites,
-        # race conditions, and inconsistent state.
-
-        temp_dir = tempfile.mkdtemp()
-        destination_file = '{}.txt'.format(self.device.label)
-        temp_filename = os.path.join(temp_dir, destination_file)
-        filename = os.path.join(
-            settings.TASK_CONFIG_BACKUP_PATH,
-            RE_MATCH_FIRST_WORD.findall(
-                self.device.group.plural.replace(' ', ''))[0],
-                destination_file)
-
-        if not os.path.exists(os.path.dirname(filename)):
-            os.mkdir(os.path.dirname(filename))
-
+    def _read_config_from_device(self, temp_filename):
         if not self.device.do_not_use_scp:
             try:
                 self.connection.open_scp_channel()
@@ -312,74 +296,100 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             or not len(open(temp_filename).read(10))):
             self._fail("Config backup failed "
                        "(empty or non-existing backup file)")
-        else:
 
-            # Remove all text matched by one of the regular expressions
-            # in the device type's config_filter list from the config file.
+    def _initialize_temporary_directory(self):
 
-            if len(self.device.device_type.filter_expressions):
+        # Create a temporary directory to prevent accidental overwrites,
+        # race conditions, and inconsistent state.
 
-                # The entire file is read into memory, processed,
-                # and written back. This is, of course, not particularly
-                # memory efficient, but the files we're processing are
-                # pretty small (<1MB), so the memory usage is not a concern.
-                # This applies to read_config as well, as it keeps the
-                # entire file in memory while receiving it. The temporary
-                # file is stored in /tmp, which is a tmpfs (in-memory
-                # filesystem) on many platforms, so there's no additional
-                # disk I/O in these cases.
+        temp_dir = tempfile.mkdtemp()
+        destination_file = '{}.txt'.format(self.device.label)
+        temp_filename = os.path.join(temp_dir, destination_file)
+        filename = os.path.join(
+            settings.TASK_CONFIG_BACKUP_PATH,
+            RE_MATCH_FIRST_WORD.findall(
+                self.device.group.plural.replace(' ', ''))[0],
+            destination_file)
 
-                with open(temp_filename) as f:
-                    raw_config = f.read()
+        if not os.path.exists(os.path.dirname(filename)):
+            os.mkdir(os.path.dirname(filename))
 
-                for regex in self.device.device_type.filter_expressions:
-                    raw_config = regex.sub('', raw_config)
+        return filename, temp_dir, temp_filename
 
-                with open(temp_filename, 'w') as f:
-                    f.write(raw_config.strip('\x00'))
+    def _cleanup_config(self, temp_filename):
 
-            # Juniper SSG firewalls encode their config as ISO-8859-2.
-            # Convert it to UTF8 so that all configs use the same encoding.
+        # Remove all text matched by one of the regular expressions
+        # in the device type's config_filter list from the config file.
 
-            if self.device.device_type.name == "Juniper SSG":
-                with codecs.open(temp_filename, encoding="iso-8859-2") as f:
-                    raw_config = f.read()
-                with codecs.open(temp_filename, 'w', encoding="utf8") as f:
-                    f.write(raw_config)
+        if len(self.device.device_type.filter_expressions):
 
-            # Move the temporary file to the config folder and clean up
-            # the temporary directory.
+            # The entire file is read into memory, processed,
+            # and written back. This is, of course, not particularly
+            # memory efficient, but the files we're processing are
+            # pretty small (<1MB), so the memory usage is not a concern.
+            # This applies to read_config as well, as it keeps the
+            # entire file in memory while receiving it. The temporary
+            # file is stored in /tmp, which is a tmpfs (in-memory
+            # filesystem) on many platforms, so there's no additional
+            # disk I/O in these cases.
 
-            if os.path.exists(filename):
-                os.unlink(filename)
-            os.rename(temp_filename, filename)
-            shutil.rmtree(temp_dir)
+            with open(temp_filename) as f:
+                raw_config = f.read()
 
-            # Git operations
+            for regex in self.device.device_type.filter_expressions:
+                raw_config = regex.sub('', raw_config)
 
-            os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
+            with open(temp_filename, 'w') as f:
+                f.write(raw_config.strip('\x00'))
 
-            if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
-                return self._return_success("Config backup successful")
+        # Juniper SSG firewalls encode their config as ISO-8859-2.
+        # Convert it to UTF8 so that all configs use the same encoding.
+        if self.device.device_type.name == "Juniper SSG":
+            with codecs.open(temp_filename, encoding="iso-8859-2") as f:
+                raw_config = f.read()
+            with codecs.open(temp_filename, 'w', encoding="utf8") as f:
+                f.write(raw_config)
 
-            # Commit config changes
+    def run(self, *args, **kwargs):
 
-            git.add('-u')
-            commit_message = u"{} config change on {}{}".format(
-                self.device.group, self.device.label,
-                u" ({})".format(self.device.name) if self.device.name else "")
-            changes = self._git_commit(commit_message)
+        filename, temp_dir, temp_filename = self._initialize_temporary_directory()
+        self._read_config_from_device(temp_filename)
 
-            # Commit any new, previously untracked configs
+        self._cleanup_config(temp_filename)
 
-            git.add('.')
-            commit_message = u"{} config for {} added".format(
-                self.device.group, self.device.label)
-            changes |= self._git_commit(commit_message)
+        # Move the temporary file to the config folder and clean up
+        # the temporary directory.
 
-            return self._return_success("Config backup successful ({})".format(
-                "no changes" if not changes else "changes found"
-            ))
+        if os.path.exists(filename):
+            os.unlink(filename)
+        os.rename(temp_filename, filename)
+        shutil.rmtree(temp_dir)
+
+        # Git operations
+
+        os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
+
+        if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+            return self._return_success("Config backup successful")
+
+        # Commit config changes
+
+        git.add('-u')
+        commit_message = u"{} config change on {}{}".format(
+            self.device.group, self.device.label,
+            u" ({})".format(self.device.name) if self.device.name else "")
+        changes = self._git_commit(commit_message)
+
+        # Commit any new, previously untracked configs
+
+        git.add('.')
+        commit_message = u"{} config for {} added".format(
+            self.device.group, self.device.label)
+        changes |= self._git_commit(commit_message)
+
+        return self._return_success("Config backup successful ({})".format(
+            "no changes" if not changes else "changes found"
+        ))
 
     @classmethod
     def run_completed(cls):
