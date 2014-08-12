@@ -55,7 +55,10 @@ class Task(models.Model):
     description = models.TextField(blank=True, default="")
     class_name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
-    hide_if_successful = models.BooleanField(default=False)
+    hide_if_successful = models.BooleanField(
+        default=False,
+        help_text="Hide in frontend if the task was successful or the "
+                  "device is disabled.")
     result_url = models.CharField(max_length=100, verbose_name="Result URL", null=True, blank=True,
                                   help_text="A URL which points to the result of a task. Will be displayed in "
                                             "the frontend if the task has been successfully run at least once. "
@@ -198,7 +201,8 @@ class Device(models.Model):
         for task in self.device_type.tasks.all():
             report = self.get_latest_report_for_task(task)
             status = self.get_status_for_report(report)
-            if task.hide_if_successful and status == self.STATUS_SUCCESS:
+            if (task.hide_if_successful and status in (self.STATUS_SUCCESS,
+                                                       self.STATUS_DISABLED)):
                 continue
             reports.append((task, status, report))
         return reports
