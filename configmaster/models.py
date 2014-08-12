@@ -205,6 +205,12 @@ class Device(models.Model):
     def set_status(self):
         self.status = self._get_status()
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self.set_status()
+        super(Device, self).save(force_insert, force_update, using,
+                                 update_fields)
+
 
 class Report(models.Model):
     class Meta:
