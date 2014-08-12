@@ -29,5 +29,4 @@ class NetworkDeviceCompareWithStartupHandler(
                                             "startup config")
 
         finally:
-            pass
-            #shutil.rmtree(temp_dir)
+            shutil.rmtree(temp_dir)
