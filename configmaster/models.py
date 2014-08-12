@@ -215,12 +215,6 @@ class Device(models.Model):
         else:
             return self.STATUS_ERROR
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
-        self.set_status()
-        super(Device, self).save(force_insert, force_update, using,
-                                 update_fields)
-
 
 class Report(models.Model):
     class Meta:
