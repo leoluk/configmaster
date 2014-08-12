@@ -82,12 +82,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         u"Fortigate": FortigateRemoteControl,
         u"Juniper SSG": JuniperRemoteControl,
         u"HP ProCurve": ProCurveRemoteControl,
-        # Brocade
         u"Brocade *Iron": BrocadeRemoteControl,
-        u"NetIron CER": BrocadeRemoteControl,
-        u"ServerIron ADX": BrocadeRemoteControl,
-        u"FastIron GS": BrocadeRemoteControl,
-        u"ServerIron XL": BrocadeRemoteControl,
     }
 
     def __init__(self, device):
