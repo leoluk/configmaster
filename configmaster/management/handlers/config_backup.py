@@ -76,11 +76,12 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         return changes
 
-    def _read_config_from_device(self, temp_filename):
-        if not self.device.do_not_use_scp:
+    def _read_config_from_device(self, temp_filename, startup_config=False,
+                                 use_scp=True):
+        if not self.device.do_not_use_scp and use_scp:
             try:
                 self.connection.open_scp_channel()
-                self.connection.read_config_scp(temp_filename)
+                self.connection.read_config_scp(temp_filename, startup_config)
             except SCPException, e:
                 # For Fortigate devices, the 501-Permission Denied error
                 # indicates that the feature is disabled. The remote control
@@ -93,7 +94,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                     raise e
         else:
             self.connection.open_console_channel()
-            config = self.connection.read_config()
+            config = self.connection.read_config(startup_config)
             with open(temp_filename, 'w') as f:
                 f.write(config)
 

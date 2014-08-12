@@ -6,3 +6,4 @@ from configmaster.management.handlers.config_backup import \
     NetworkDeviceConfigBackupHandler
 from network_device import GuessFirewallTypeHandler, \
     SSHLoginTestHandler
+from config_compare import NetworkDeviceCompareWithStartupHandler
