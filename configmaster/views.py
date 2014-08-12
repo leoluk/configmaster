@@ -1,9 +1,9 @@
 from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponse
+from django.views.decorators.cache import cache_page
 from django.views.generic import ListView, View
 
 from configmaster.models import Device, Task
-
 
 class DashboardView(ListView):
     template_name = 'configmaster/dashboard.html'
