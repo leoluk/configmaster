@@ -34,5 +34,13 @@ body {
     opacity: 0.2;
 }
 
+.additional_task td {
+    border-top: 0 !important;
+}
+
+.additional_task_note {
+    text-align: right;
+    color: #808080;
+}
 
 

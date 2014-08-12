@@ -13,7 +13,6 @@ class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):
         try:
             device = Device.objects.get(label=request.REQUEST['device'])
-            # TODO: multiple tasks, T116
             task = Task.objects.get(id=request.REQUEST['task'])
         except Device.DoesNotExist:
             return HttpResponseNotFound("No such device")
@@ -22,9 +21,12 @@ class DeviceStatusAPIView(View):
         except KeyError:
             return HttpResponseBadRequest("Missing parameter")
 
-        status_text = dict(device.STATUS_CHOICES)[device.status]
+        report = device.get_latest_report_for_task(task)
+        status = device.get_status_for_report(report)
 
-        if device.latest_report is not None:
+        status_text = dict(device.STATUS_CHOICES)[status]
+
+        if status in (device.STATUS_SUCCESS, device.STATUS_ERROR):
             status_text += ": " + device.latest_report.output
 
         return HttpResponse(status_text, content_type='text/plain')

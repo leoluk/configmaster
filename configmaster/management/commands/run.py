@@ -171,9 +171,6 @@ class Command(BaseCommand):
                     report.task = task
                     report.output = output
                     report.save()
-                    device.set_status()
-                    device.save()
-
 
         # Call run_complete methods of all invoked task handlers
 
