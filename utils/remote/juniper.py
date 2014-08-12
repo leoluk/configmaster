@@ -89,7 +89,7 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
 
     def read_config_scp(self, destination, startup_config=False):
         if startup_config:
-            raise NotImplementedError("Juniper SSG does not support"
+            raise NotImplementedError("Juniper SSG does not support "
                                       "startup config copy over SCP")
         self.scp.get("ns_sys_config", destination)
 
@@ -97,6 +97,7 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
         with self.ctx_term_setup():
             self.run_command("get config" +
                              (" saved"  if startup_config else ""))
+            self.expect_prompt()
             return self.interact.current_output_clean.strip("ssg5-serial->").strip()
 
     def read_sysinfo(self):
@@ -112,12 +113,12 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
 
     def setup_terminal(self):
         self.run_command("set console page 0")
-        self.run_command("set console timeout 0")
+        #self.run_command("set console timeout 0")
 
     def teardown_terminal(self):
         # TODO: is 10 the default value for page?
         self.run_command("set console page 10")
-        self.run_command("set console timeout 10")
+        #self.run_command("set console timeout 10")
 
     def close(self):
         if self.chan:
