@@ -27,7 +27,7 @@ class DeviceStatusAPIView(View):
         status_text = dict(device.STATUS_CHOICES)[status]
 
         if status in (device.STATUS_SUCCESS, device.STATUS_ERROR):
-            status_text += ": " + device.latest_report.output
+            status_text += ": " + report.output
 
         return HttpResponse(status_text, content_type='text/plain')
 
