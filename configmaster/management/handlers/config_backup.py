@@ -124,29 +124,28 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
     def _cleanup_config(self, temp_filename):
 
+        # The entire file is read into memory, processed,
+        # and written back. This is, of course, not particularly
+        # memory efficient, but the files we're processing are
+        # pretty small (<1MB), so the memory usage is not a concern.
+        # This applies to read_config as well, as it keeps the
+        # entire file in memory while receiving it. The temporary
+        # file is stored in /tmp, which is a tmpfs (in-memory
+        # filesystem) on many platforms, so there's no additional
+        # disk I/O in these cases.
+
+        with open(temp_filename) as f:
+            raw_config = f.read()
+
         # Remove all text matched by one of the regular expressions
         # in the device type's config_filter list from the config file.
 
         if len(self.device.device_type.filter_expressions):
-
-            # The entire file is read into memory, processed,
-            # and written back. This is, of course, not particularly
-            # memory efficient, but the files we're processing are
-            # pretty small (<1MB), so the memory usage is not a concern.
-            # This applies to read_config as well, as it keeps the
-            # entire file in memory while receiving it. The temporary
-            # file is stored in /tmp, which is a tmpfs (in-memory
-            # filesystem) on many platforms, so there's no additional
-            # disk I/O in these cases.
-
-            with open(temp_filename) as f:
-                raw_config = f.read()
-
             for regex in self.device.device_type.filter_expressions:
                 raw_config = regex.sub('', raw_config)
 
-            with open(temp_filename, 'w') as f:
-                f.write(raw_config.strip('\x00'))
+        with open(temp_filename, 'w') as f:
+            f.write(raw_config.strip('\x00'))
 
         # Juniper SSG firewalls encode their config as ISO-8859-2.
         # Convert it to UTF8 so that all configs use the same encoding.
