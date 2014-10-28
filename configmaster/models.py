@@ -77,7 +77,7 @@ class Task(models.Model):
             hostname=device.hostname,
             device_type=device.device_type,
             group=device.group,
-            group_plural=device.group.plural
+            group_plural=device.group.plural.replace(' ', '')
         )
 
 
