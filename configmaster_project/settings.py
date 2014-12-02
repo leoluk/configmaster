@@ -20,33 +20,6 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
-#INTERNAL_IPS = (
-#    "192.168.50.50",
-#)
-
-# Custom settings
-
-PWSAFE_EXPORT_URL = "https://pwsafe.continum.net/pwsafe/configmaster_export"
-PWSAFE_DEVICE_URL = "https://pwsafe.continum.net/pwsafe/devices/#%s"
-PWSAFE_ASSETDB_REDIRECT = "https://pwsafe.continum.net/pwsafe/asset_db_lookup?device=%s"
-TASK_CONFIG_BACKUP_PATH = "/home/configmaster/continum-network-configs/"
-TASK_CONFIG_BACKUP_DISABLE_GIT = False
-TASK_CONFIG_BACKUP_SSH_CONFIG = "/home/configmaster/.ssh/config"
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'secret'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-TEMPLATE_DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
 # Application definition
 
 INSTALLED_APPS = (
@@ -63,7 +36,7 @@ INSTALLED_APPS = (
     'icons_famfamfam',
     'dajaxice',
     'dajax',
-    'debug_toolbar',
+    #'debug_toolbar',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -125,3 +98,5 @@ CACHES = {
     }
 }
 
+
+from local_settings import *
