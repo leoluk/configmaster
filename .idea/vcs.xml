@@ -2,6 +2,13 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../pwmgmt" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir1" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir2" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir3" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir4" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir5" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir6" vcs="Git" />
+    <mapping directory="$USER_HOME$/test/dir7" vcs="Git" />
   </component>
 </project>
-
