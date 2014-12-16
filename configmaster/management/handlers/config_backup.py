@@ -9,7 +9,7 @@ from sh import git
 
 from configmaster.management.handlers.network_device import \
     NetworkDeviceHandler, RE_MATCH_FIRST_WORD
-from configmaster.models import DeviceType, DeviceGroup
+from configmaster.models import DeviceType, DeviceGroup, Repository
 
 
 __author__ = 'lschabel'
@@ -200,27 +200,26 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
 
+        if not settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+            git.push()
+
         for device_group in DeviceGroup.objects.all():
             os.chdir(device_group.repository.path)
 
-            if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
-                return
+        for device_type in DeviceType.objects.all():
+            if not device_type.config_filter:
+                continue
+            filename = os.path.join(
+                Repository.objects.get(id=1).path,
+                'Meta', "{}_filter.txt".format(
+                    RE_MATCH_FIRST_WORD.findall(
+                        device_type.name.replace(" ", "_"))[0]))
 
-            for device_type in DeviceType.objects.all():
-                if not device_type.config_filter:
-                    continue
-                filename = os.path.join(
-                    settings.TASK_CONFIG_BACKUP_PATH,
-                    'Meta', "{}_filter.txt".format(
-                        RE_MATCH_FIRST_WORD.findall(
-                            device_type.name.replace(" ", "_"))[0]))
+            with codecs.open(filename, 'w', 'utf8') as f:
+                f.write("# Automatically generated from database\n\n")
+                f.write(device_type.config_filter)
 
-                with codecs.open(filename, 'w', 'utf8') as f:
-                    f.write("# Automatically generated from database\n\n")
-                    f.write(device_type.config_filter)
+            git.add("--", quote(filename))
+            cls._git_commit(
+                'Config filter for device type "%s" changed' % device_type.name)
 
-                git.add("--", quote(filename))
-                cls._git_commit(
-                    'Config filter for device type "%s" changed' % device_type.name)
-
-            git.push()
