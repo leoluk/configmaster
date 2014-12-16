@@ -200,11 +200,14 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
 
-        if not settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
-            git.push()
+        if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+            return
 
         for device_group in DeviceGroup.objects.all():
             os.chdir(device_group.repository.path)
+            git.push()
+
+        os.chdir(Repository.objects.get(id=1).path)
 
         for device_type in DeviceType.objects.all():
             if not device_type.config_filter:
@@ -222,4 +225,6 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             git.add("--", quote(filename))
             cls._git_commit(
                 'Config filter for device type "%s" changed' % device_type.name)
+
+            git.push()
 
