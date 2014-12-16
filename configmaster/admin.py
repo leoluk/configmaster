@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
-from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task, ConnectionSetting
+from configmaster.models import DeviceType, DeviceGroup, Report, Credential, Task, ConnectionSetting, \
+    Repository
 from configmaster.models import Device
 import adminactions.actions as actions
 
@@ -83,6 +84,7 @@ admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType)
 admin.site.register(DeviceGroup)
 admin.site.register(Task)
+admin.site.register(Repository)
 admin.site.register(ConnectionSetting)
 admin.site.register(Credential, CredentialAdmin)
 admin.site.register(Report, ReportAdmin)

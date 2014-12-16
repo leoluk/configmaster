@@ -40,11 +40,23 @@ class ConnectionSetting(models.Model):
             return self.name
 
 
+class Repository(models.Model):
+    class Meta:
+        verbose_name_plural = "Repositories"
+
+    name = models.CharField(max_length=100)
+    path = models.CharField(max_length=500)
+
+    def __unicode__(self):
+        return u"{} - {}".format(self.name, self.path)
+
+
 class DeviceGroup(models.Model):
     name = models.CharField("Group name", max_length=100)
     plural = models.CharField(max_length=100)
     enabled = models.BooleanField("Config management enabled for devices in group", default=True)
     default_device_type = models.ForeignKey("DeviceType", null=True, blank=True)
+    repository = models.ForeignKey(Repository)
 
     def __unicode__(self):
         return self.name
