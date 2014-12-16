@@ -9,7 +9,7 @@ from sh import git
 
 from configmaster.management.handlers.network_device import \
     NetworkDeviceHandler, RE_MATCH_FIRST_WORD
-from configmaster.models import DeviceType
+from configmaster.models import DeviceType, DeviceGroup
 
 
 __author__ = 'lschabel'
@@ -112,7 +112,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         destination_file = '{}.txt'.format(self.device.label)
         temp_filename = os.path.join(temp_dir, destination_file)
         filename = os.path.join(
-            settings.TASK_CONFIG_BACKUP_PATH,
+            self.device.group.repository.path,
             RE_MATCH_FIRST_WORD.findall(
                 self.device.group.plural.replace(' ', ''))[0],
             destination_file)
@@ -172,7 +172,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         # Git operations
 
-        os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
+        os.chdir(self.device.group.repository.path)
 
         if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
             return self._return_success("Config backup successful")
@@ -199,26 +199,28 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     @classmethod
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
-        os.chdir(settings.TASK_CONFIG_BACKUP_PATH)
 
-        if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
-            return
+        for device_group in DeviceGroup.objects.all():
+            os.chdir(device_group.repository.path)
 
-        for device_type in DeviceType.objects.all():
-            if not device_type.config_filter:
-                continue
-            filename = os.path.join(
-                settings.TASK_CONFIG_BACKUP_PATH,
-                'Meta', "{}_filter.txt".format(
-                    RE_MATCH_FIRST_WORD.findall(
-                        device_type.name.replace(" ", "_"))[0]))
+            if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+                return
 
-            with codecs.open(filename, 'w', 'utf8') as f:
-                f.write("# Automatically generated from database\n\n")
-                f.write(device_type.config_filter)
+            for device_type in DeviceType.objects.all():
+                if not device_type.config_filter:
+                    continue
+                filename = os.path.join(
+                    settings.TASK_CONFIG_BACKUP_PATH,
+                    'Meta', "{}_filter.txt".format(
+                        RE_MATCH_FIRST_WORD.findall(
+                            device_type.name.replace(" ", "_"))[0]))
 
-            git.add("--", quote(filename))
-            cls._git_commit(
-                'Config filter for device type "%s" changed' % device_type.name)
+                with codecs.open(filename, 'w', 'utf8') as f:
+                    f.write("# Automatically generated from database\n\n")
+                    f.write(device_type.config_filter)
 
-        git.push()
+                git.add("--", quote(filename))
+                cls._git_commit(
+                    'Config filter for device type "%s" changed' % device_type.name)
+
+            git.push()
