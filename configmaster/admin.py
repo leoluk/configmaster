@@ -15,7 +15,7 @@ class DeviceAdmin(admin.ModelAdmin):
             'fields': ('name', 'label', 'hostname', 'group', 'device_type')
         }),
         ("Settings", {
-            'fields': ('enabled', 'sync', 'credential', 'ssh_known_host', 'do_not_use_scp')
+            'fields': ('enabled', 'sync', 'credential', 'accept_new_hostkey', 'do_not_use_scp')
         }),
         ('Config management data', {
             'description': "Will get overwritten during the next run.",
