@@ -134,6 +134,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         return self._remote_control_class(
             ssh_hostname,
             ssh_port,
+            hostkey_change_cb=self.device.approve_new_hostkey,
             *args, **kwargs)
 
     def _connect_ssh(self):

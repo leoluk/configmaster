@@ -206,10 +206,8 @@ class Device(models.Model):
     # is needed because CM runs are non- interactive by default, so we need
     # another way to approve host key changes.
 
-    ssh_known_host = models.BooleanField(verbose_name="SSH known host", default=False,
-                                         help_text="This flag is set after the SSH key has been added to the "
-                                                   "server's host key database. Unset it manually to accept a "
-                                                   "changed host key.")
+    accept_new_hostkey = models.BooleanField(verbose_name="Accept new host key", default=False,
+                                         help_text="Set this flag to accept a changed host key.")
 
     def __unicode__(self):
         return self.name if self.name else self.hostname
@@ -267,6 +265,17 @@ class Device(models.Model):
             return self.STATUS_SUCCESS
         else:
             return self.STATUS_ERROR
+
+    def approve_new_hostkey(self):
+        """Called by the SSH connection routine whenever a changed
+        SSH key is encountered."""
+
+        if self.accept_new_hostkey:
+            self.accept_new_hostkey = False
+            self.save()
+            return True
+        else:
+            return False
 
 
 class Report(models.Model):

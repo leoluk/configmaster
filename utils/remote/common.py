@@ -1,7 +1,11 @@
 from contextlib import contextmanager
 import socket
+import os
 import paramiko
+import binascii
 from subprocess import list2cmdline
+from paramiko.hostkeys import HostKeys
+from paramiko.ssh_exception import SSHException
 
 from utils.contrib import scp, pexpect
 
@@ -33,12 +37,11 @@ class BaseRemoteControl(object):
 # TODO: verbose logging
 
 class SSHRemoteControl(BaseRemoteControl):
-    def __init__(self, hostname, port=22, hostkey=None, timeout=3, cmd_timeout=10):
+    def __init__(self, hostname, port=22, timeout=3, cmd_timeout=10,
+                 hostkey_change_cb=lambda: False):
         super(SSHRemoteControl, self).__init__(hostname)
-
         self.transport = None
         self.port = port
-        self.hostkey = hostkey
         self.chan = None
         self.username = None
         self.password = None
@@ -47,6 +50,7 @@ class SSHRemoteControl(BaseRemoteControl):
         self.scp = None
         self.cmd_timeout = cmd_timeout
         self.allocate_pty = True
+        self.hostkey_change_cb = hostkey_change_cb
 
     def _connect_transport(self, transport, username=None, password=None):
 
@@ -60,7 +64,27 @@ class SSHRemoteControl(BaseRemoteControl):
         except paramiko.SSHException:
             raise ConnectionError("SSH negotiation failed")
 
-        # TODO: verify host key here
+        hostkeys = HostKeys()
+        hostkey_file = os.path.expanduser('~/.ssh/known_hosts')
+        hostkeys.load(hostkey_file)
+        server_hostkey_name = ("[%s]:%d" % (self.hostname, self.port) if
+            self.port != 22 else self.hostname)
+        server_hostkey_type = transport.host_key.get_name()
+
+        try:
+            # Raises KeyError if no host key is present
+            expected_key = hostkeys[server_hostkey_name][server_hostkey_type]
+
+            if expected_key != transport.host_key:
+                if self.hostkey_change_cb():
+                    raise KeyError
+                else:
+                    raise SSHException("SSH host key changed to %s" %
+                    binascii.hexlify(transport.host_key.get_fingerprint()))
+
+        except KeyError:
+            hostkeys.add(server_hostkey_name, server_hostkey_type, transport.host_key)
+            hostkeys.save(hostkey_file)
 
         try:
             transport.auth_password(username, password)
@@ -131,8 +155,8 @@ class SSHRemoteControl(BaseRemoteControl):
 
 
 class NetworkDeviceRemoteControl(SSHRemoteControl):
-    def __init__(self, hostname, port=22, hostkey=None, timeout=5, cmd_timeout=20):
-        super(NetworkDeviceRemoteControl, self).__init__(hostname, port, hostkey, timeout, cmd_timeout)
+    def __init__(self, *args, **kwargs):
+        super(NetworkDeviceRemoteControl, self).__init__(*args, **kwargs)
         self.allocate_pty = False
 
     def change_admin_password(self, new_password, verify=True):
