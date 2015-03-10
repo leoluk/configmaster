@@ -1,7 +1,44 @@
+import logging
 from django.conf import settings
 import re
+from django.contrib.auth.models import Group
 
 from django.db import models
+import django_auth_ldap.backend
+
+
+logger = logging.getLogger(__name__)
+
+
+def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
+    try:
+        name = ldap_user.attrs.get('displayname', [])
+        uid = ldap_user.attrs.get('uid')[0]  # may not be empty
+
+        user.groups.clear()
+
+        for groupname in ldap_user.group_names:
+            group = Group.objects.get_or_create(name=groupname)[0]
+            group.user_set.add(user)
+
+        user.password = "!"
+        user.is_staff = True
+        user.is_active = ([group in settings.LOGIN_ALLOWED_GROUPS for group in
+                    ldap_user.group_names])
+
+        if name:
+            words = name[0].split()
+            user.first_name = ' '.join(words[:-1])
+            user.last_name = words[-1]
+
+        if not str(user.email):
+            user.email = uid + '@continum.net'
+    except:
+        logger.exception("LDAP update failed")
+        return True
+
+
+django_auth_ldap.backend.populate_user.connect(update_user_from_ldap)
 
 
 class Credential(models.Model):

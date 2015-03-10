@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+import ldap
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -47,6 +49,31 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
+
+# LDAP auth
+
+AUTH_LDAP_SERVER_URI = 'ldap://[...]'
+
+AUTH_LDAP_BIND_DN = ""
+AUTH_LDAP_BIND_PASSWORD = ""
+AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=Users,dc=continum,dc=net",
+                                   ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
+AUTH_LDAP_START_TLS = False
+
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+    'ou=Roles,dc=continum,dc=net',
+    ldap.SCOPE_SUBTREE)
+
+AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
+
+AUTHENTICATION_BACKENDS = (
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+LOGIN_ALLOWED_GROUPS = ("ldapGroup", )
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 
