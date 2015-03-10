@@ -125,5 +125,6 @@ CACHES = {
     }
 }
 
+CONFIGMASTER_RETRIES = 1
 
 from local_settings import *

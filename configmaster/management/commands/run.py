@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.management import BaseCommand
 import re
 import traceback
@@ -5,6 +6,7 @@ from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
 from configmaster.models import Device, Report, DeviceGroup
 from configmaster.views import DashboardView
+
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
 
@@ -47,6 +49,10 @@ class Command(BaseCommand):
            " the command line. Exclude devices/groups by prepending them" \
            " with %."
 
+    def __init__(self):
+        super(Command, self).__init__()
+        self.call_after_completion = {}
+
     def _resolve_arg(self, argument):
         try:
             return [Device.objects.get(label=argument)]
@@ -59,6 +65,78 @@ class Command(BaseCommand):
                 return []
 
     # noinspection PyBroadException
+    def run_task(self, device, task):
+        report = Report()
+        try:
+            # Make sure that the class name read from the database
+            # is one single word as a precaution and get it from
+            # the management.handlers module, which is already
+            # imported.
+
+            if RE_MATCH_SINGLE_WORD.match(task.class_name):
+                try:
+                    handler_obj = getattr(handlers, task.class_name)(device)
+                except AttributeError:
+                    raise TaskExecutionError('Handler class "%s" not found'
+                                             % task.class_name)
+
+                # Invoke the task handler methods (main part!)
+
+                with handler_obj.run_wrapper():
+                    _result = handler_obj.run()
+                if _result is None:
+                    raise TaskExecutionError(
+                        "Task handler did not return any data")
+
+                # Add the run_completed handler to a dictionary
+                # in order to call it after the run is completed.
+                # This ensures that each handler is only called once.
+
+                self.call_after_completion[task.name] = handler_obj.run_completed
+
+                result, output = _result
+
+            elif not task.class_name:
+                raise TaskExecutionError("Empty handler class name")
+            else:
+                raise TaskExecutionError("Invalid handler class name: %s"
+                                         % device.device_type.handler)
+
+        # Convert TaskExecutionError exceptions to regular task
+        # output (see command documentation). Instead of raising
+        # this exception, a task could set the Report.RESULT_FAILURE
+        # result manually.
+
+        except TaskExecutionError, e:
+            result = Report.RESULT_FAILURE
+            output = str(e)
+
+        # Catch any exception raised by the task and log it to
+        # the database. The Report.long_output field is not shown
+        # in the status table in the frontend, so it's okay to put
+        # long text in it (in this case a full traceback).
+
+        except Exception, e:
+            result = Report.RESULT_FAILURE
+            output = (u"Uncaught {}, message: {}"
+                      .format(type(e).__name__, str(e)))
+            report.long_output = traceback.format_exc()
+        if result == Report.RESULT_FAILURE:
+            self.stderr.write('Device %s, task "%s" failed: %s'
+                              % (device.label, task.name, output))
+            if report.long_output:
+                self.stderr.write(report.long_output)
+        else:
+            self.stdout.write('Device %s, task "%s" succeeded'
+                              % (device.label, task.name))
+            self.stdout.write("Output: %r" % output)
+        report.device = device
+        report.result = result
+        report.task = task
+        report.output = output
+        report.save()
+        return result
+
     def handle(self, *args, **options):
         devices = []
         excluded_devices = []
@@ -79,8 +157,6 @@ class Command(BaseCommand):
             self.stderr.write("No devices, aborting")
             return
 
-        call_after_completion = dict()
-
         for device in devices:
             if device.device_type is None:
                 self.stdout.write("Device %s has no device type, skipping..." % device.label)
@@ -100,81 +176,20 @@ class Command(BaseCommand):
                         self.stdout.write('Device %s, task "%s" skipped (disabled)'
                                           % (device.label, task.name))
                         continue
-                    report = Report()
-                    try:
-                        # Make sure that the class name read from the database
-                        # is one single word as a precaution and get it from
-                        # the management.handlers module, which is already
-                        # imported.
 
-                        if RE_MATCH_SINGLE_WORD.match(task.class_name):
-                            try:
-                                handler_obj = getattr(handlers, task.class_name)(device)
-                            except AttributeError:
-                                raise TaskExecutionError('Handler class "%s" not found'
-                                                         % task.class_name)
-
-                            # Invoke the task handler methods (main part!)
-
-                            with handler_obj.run_wrapper():
-                                _result = handler_obj.run()
-                            if _result is None:
-                                raise TaskExecutionError("Task handler did not return any data")
-
-                            # Add the run_completed handler to a dictionary
-                            # in order to call it after the run is completed.
-                            # This ensures that each handler is only called once.
-
-                            call_after_completion[task.name] = handler_obj.run_completed
-
-                            result, output = _result
-
-                        elif not task.class_name:
-                            raise TaskExecutionError("Empty handler class name")
+                    retries = 0
+                    while True:
+                        output = self.run_task(device, task)
+                        if output == Report.RESULT_FAILURE and retries < settings.CONFIGMASTER_RETRIES:
+                            retries += 1
+                            self.stdout.write('Retrying... (%d/%d)' % (retries, settings.CONFIGMASTER_RETRIES))
                         else:
-                            raise TaskExecutionError("Invalid handler class name: %s"
-                                                     % device.device_type.handler)
+                            break
 
-                    # Convert TaskExecutionError exceptions to regular task
-                    # output (see command documentation). Instead of raising
-                    # this exception, a task could set the Report.RESULT_FAILURE
-                    # result manually.
-
-                    except TaskExecutionError, e:
-                        result = Report.RESULT_FAILURE
-                        output = str(e)
-
-                    # Catch any exception raised by the task and log it to
-                    # the database. The Report.long_output field is not shown
-                    # in the status table in the frontend, so it's okay to put
-                    # long text in it (in this case a full traceback).
-
-                    except Exception, e:
-                        result = Report.RESULT_FAILURE
-                        output = (u"Uncaught {}, message: {}"
-                                  .format(type(e).__name__, str(e)))
-                        report.long_output = traceback.format_exc()
-
-
-                    if result == Report.RESULT_FAILURE:
-                        self.stderr.write('Device %s, task "%s" failed: %s'
-                                          % (device.label, task.name, output))
-                        if report.long_output:
-                            self.stderr.write(report.long_output)
-                    else:
-                        self.stdout.write('Device %s, task "%s" succeeded'
-                                          % (device.label, task.name))
-                        self.stdout.write("Output: %r" % output)
-
-                    report.device = device
-                    report.result = result
-                    report.task = task
-                    report.output = output
-                    report.save()
 
         # Call run_complete methods of all invoked task handlers
 
-        for task_name, func in call_after_completion.iteritems():
+        for task_name, func in self.call_after_completion.iteritems():
             self.stdout.write('Calling run_complete for task "%s"...' % task_name)
             func()
 
