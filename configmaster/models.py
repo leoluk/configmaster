@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+import os
 import re
 from django.contrib.auth.models import Group
 
@@ -8,6 +9,8 @@ import django_auth_ldap.backend
 
 
 logger = logging.getLogger(__name__)
+
+RE_MATCH_FIRST_WORD = re.compile(r'\b\w+\b')
 
 
 def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
@@ -276,6 +279,17 @@ class Device(models.Model):
             return True
         else:
             return False
+
+    @property
+    def config_backup_filename(self):
+        basename = '{}.txt'.format(self.label)
+        filename = os.path.join(
+            self.group.repository.path,
+            RE_MATCH_FIRST_WORD.findall(
+                self.group.plural.replace(' ', ''))[0],
+            basename)
+
+        return filename
 
 
 class Report(models.Model):

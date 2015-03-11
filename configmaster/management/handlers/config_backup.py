@@ -5,11 +5,11 @@ from pipes import quote
 from scp import SCPException
 import shutil
 import tempfile
-from sh import git
+from sh import git, find
 
 from configmaster.management.handlers.network_device import \
     NetworkDeviceHandler, RE_MATCH_FIRST_WORD
-from configmaster.models import DeviceType, DeviceGroup, Repository
+from configmaster.models import DeviceType, DeviceGroup, Repository, Device
 
 
 __author__ = 'lschabel'
@@ -62,10 +62,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         if len(git("diff-index", "--name-only", "HEAD", "--")):
             git.commit(message=commit_message)
 
-            # Doing a git push inside the handler means that the entire
-            # task would fail if the push fails (for example, if). Doing a
-            # push once per run is sufficient, so only push inside the task
-            # handler in debug mode.
+            # Doing a git push inside the handler means that the entire task
+            # would fail if the push fails. Doing a push once per run is
+            # sufficient, so only push inside the task handler in debug mode.
 
             if settings.DEBUG:
                 git.push()
@@ -109,13 +108,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         # race conditions, and inconsistent state.
 
         temp_dir = tempfile.mkdtemp()
-        destination_file = '{}.txt'.format(self.device.label)
-        temp_filename = os.path.join(temp_dir, destination_file)
-        filename = os.path.join(
-            self.device.group.repository.path,
-            RE_MATCH_FIRST_WORD.findall(
-                self.device.group.plural.replace(' ', ''))[0],
-            destination_file)
+        filename = self.device.config_backup_filename
+        temp_filename = os.path.join(temp_dir, os.path.basename(filename))
 
         if not os.path.exists(os.path.dirname(filename)):
             os.mkdir(os.path.dirname(filename))
@@ -200,8 +194,28 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
 
+        # Generate "ByHostname" symlinks
+
+        for device in Device.objects.all():
+            symlink_dir = os.path.join(device.group.repository.path, "_ByHostname")
+            if not os.path.exists(symlink_dir):
+                os.mkdir(symlink_dir)
+            symlink = os.path.join(symlink_dir, '{}.txt'.format(device.hostname))
+            if not os.path.islink(symlink) and os.path.exists(device.config_backup_filename):
+                os.symlink(os.path.relpath(device.config_backup_filename, symlink_dir), symlink)
+
+        # Git push and config filter commits
+
         if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
             return
+
+        for repository in Repository.objects.all():
+            os.chdir(repository.path)
+            # Clean up broken symlinks
+            find('-L', '_ByHostname', '-type', 'l', '-delete')
+            git.add('-A', '_ByHostname')
+            if cls._git_commit('Symlink updates'):
+                git.push()
 
         for device_group in DeviceGroup.objects.all():
             os.chdir(device_group.repository.path)
@@ -223,8 +237,6 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 f.write(device_type.config_filter)
 
             git.add("--", quote(filename))
-            cls._git_commit(
-                'Config filter for device type "%s" changed' % device_type.name)
-
-            git.push()
+            if cls._git_commit('Config filter for device type "%s" changed' % device_type.name):
+                git.push()
 
