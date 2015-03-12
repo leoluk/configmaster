@@ -10,6 +10,7 @@
 {% block base_content %}
 
     {% url 'dashboard' as url_dashboard %}
+    {% url 'version_info' as url_versions %}
 
     <!-- Static navbar -->
     <div class="navbar navbar-default">
@@ -25,10 +26,10 @@
             <ul class="nav navbar-nav">
                 <li><span><a href="/"><img src="{% static 'media/c_logo.gif' %}" class="logo"></a></span></li>
 
-                {% if user.is_authenticated %}
-                    <li {% if request.path == url_dashboard %} class="active"{% endif %}><a
-                            href="{{ url_dashboard }}">{% trans "Dashboard" %}</a></li>
-                {% endif %}
+                <li {% if request.path == url_dashboard %} class="active"{% endif %}><a
+                        href="{{ url_dashboard }}">{% trans "Dashboard" %}</a></li>
+                <li {% if request.path == url_versions %} class="active"{% endif %}><a
+                        href="{{ url_versions }}">{% trans "Firmware versions" %}</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
