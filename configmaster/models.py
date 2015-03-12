@@ -101,6 +101,10 @@ class DeviceGroup(models.Model):
     def __unicode__(self):
         return self.name
 
+    @property
+    def device_set_ordered_by_type(self):
+        return self.device_set.order_by("device_type").all()
+
 
 class Task(models.Model):
     name = models.CharField(max_length=100)
@@ -148,9 +152,14 @@ class DeviceType(models.Model):
                                                "Dot does not match newlines, ^$ match the beginning "
                                                "and end of each line.", blank=True)
 
+    version_regex = models.CharField(max_length=120,
+                                     help_text="Regular expression which extracts version information. "
+                                               "The regex is applied to the first five config lines (line per line!).", blank=True)
+
     def __init__(self, *args, **kwargs):
         super(DeviceType, self).__init__(*args, **kwargs)
         self._filter_expressions = []
+        self._version_regex = None
 
     @property
     def filter_expressions(self):
@@ -167,6 +176,12 @@ class DeviceType(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    @property
+    def get_version_regex(self):
+        if not self._version_regex:
+            self._version_regex = re.compile(self.version_regex)
+        return self._version_regex
 
 
 class Device(models.Model):
@@ -214,6 +229,7 @@ class Device(models.Model):
                                          help_text="Set this flag to accept a changed host key.")
 
     latest_reports = models.ManyToManyField("Report", editable=False, related_name="latest_device")
+    version_info = models.TextField("Version info", editable=False, blank=True)
 
     def __unicode__(self):
         return self.name if self.name else self.hostname
@@ -304,6 +320,25 @@ class Device(models.Model):
     def remove_latest_reports_for_task(self, task):
         for report in self.latest_reports.filter(task=task):
             self.latest_reports.remove(report)
+
+    @property
+    def _version_info(self):
+        if not self.device_type:
+            return "Error: no device type"
+        if not self.device_type.version_regex:
+            return "Error: no version regex"
+        try:
+            config = open(self.config_backup_filename).read()
+            for line in config.split('\n', 5)[:5]:
+                match = self.device_type.get_version_regex.findall(line)
+                if match:
+                    if isinstance(match[0], str):
+                        return match[0]
+                    else:
+                        return " - ".join(match[0])
+            return "Error: regex present, but no match"
+        except IOError:
+            return "Error: no config"
 
 
 class Report(models.Model):

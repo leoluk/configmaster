@@ -3,11 +3,18 @@ from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
 from django.views.decorators.cache import cache_page
 from django.views.generic import ListView, View
 
-from configmaster.models import Device, Task
+from configmaster.models import Device, Task, DeviceGroup
+
 
 class DashboardView(ListView):
     template_name = 'configmaster/dashboard.html'
-    queryset = Device.objects.order_by('-enabled', 'group', 'name').select_related('group__name').prefetch_related("latest_reports")
+    queryset = Device.objects.order_by('-enabled', 'group', 'name').select_related('group__name').prefetch_related("latest_reports").prefetch_related("latest_reports__task")
+
+
+class VersionInfoView(ListView):
+    template_name = 'configmaster/version_info.html'
+    queryset = DeviceGroup.objects.prefetch_related("device_set").prefetch_related("device_set__device_type")
+
 
 class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):

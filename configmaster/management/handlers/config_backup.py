@@ -186,6 +186,11 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             self.device.group, self.device.label)
         changes |= self._git_commit(commit_message)
 
+        # Extract version info
+
+        if self.device.device_type.version_regex and changes:
+            self.device.version_info = self.device._version_info
+
         return self._return_success("Config backup successful ({})".format(
             "no changes" if not changes else "changes found"
         ))

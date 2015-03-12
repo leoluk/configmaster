@@ -1,0 +1,50 @@
+{% extends 'configmaster/app_base.html' %}
+
+{% block app_name %}Firmware versions{% endblock %}
+
+{% load icons %}
+{% load humanize %}
+{% load admin_urls %}
+
+{% block content %}
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+                    $(".action").tooltip();
+                }
+        )
+    </script>
+
+    {% for group in object_list %}
+        <h3>{{ group.plural }}</h3>
+
+        <table class="table">
+            <tr>
+                <th style="width: 5%;">Label</th>
+                <th style="width: 30%;">Name</th>
+                <th style="width: 15%;">Device type</th>
+                <th>Version</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+            {% for device in group.device_set_ordered_by_type %}
+                {% if device.version_info and device.is_enabled %}
+                    <tr>
+                        <td>{{ device.label }}</td>
+                        <td>{{ device }}</td>
+                        <td>{{ device.device_type }}</td>
+                        <td>{% if "Error" in device.version_info %}{% icon 'cancel' %} {% endif %}{{ device.version_info }}</td>
+                        <td style="text-align: right;">
+                            <div class="actions">
+                                <a class="action" data-toggle="tooltip" title="AssetDB lookup"
+                                   href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+
+    {% endfor %}
+
+
+{% endblock %}
