@@ -25,14 +25,14 @@
             <th>Actions</th>
         </tr>
         {% for device in object_list %}
-            {% for task, status, report in device.latest_reports %}
+            {% for report in device.latest_reports_fallback %}
                 {% with forloop.counter0 as additional_task %}
                     {% if additional_task %}
                         <tr class="additional_task">
                             <td></td>
                             <td></td>
                             <td class="additional_task_note">
-                                {{ task.name }}:
+                                {{ report.task.name }}:
                             </td>
                             {% else %}
                         <tr>
@@ -41,15 +41,17 @@
                         <td>{{ device }}</td>
                     {% endif %}
                 <td>
-                    {% if status == device.STATUS_DISABLED %}
+                    {% if not device.is_enabled %}
                         {% icon 'cog' %} Disabled
-                    {% elif status == device.STATUS_NO_REPORT %}
+                    {% elif not report %}
                         {% icon 'error' %} No report found
-                    {% elif status == device.STATUS_SUCCESS %}
-                        {% icon 'tick' %} {{ report.output }}
-                    {% elif status == device.STATUS_ERROR %}
-                        {% icon 'cancel' %}
-                        {{ report.output | truncatechars:60 }}
+                    {% else %}
+                        {% if report.result_is_success %}
+                            {% icon 'tick' %} {{ report.output }}
+                        {% else %}
+                            {% icon 'cancel' %}
+                            {{ report.output | truncatechars:60 }}
+                        {% endif %}
                     {% endif %}
                 </td>
                 <td>
@@ -78,7 +80,7 @@
                         {% endif %}
                         </a>
                         {% with report.result_url as url %}
-                            {% if device.number_of_successful_runs and url %}
+                            {% if report.result_is_success and url %}
                                 <a class="action" data-toggle="tooltip" title="Go to task result"
                                    href="{{ url }}" target="_blank">
                                 {% icon "page_go" %}

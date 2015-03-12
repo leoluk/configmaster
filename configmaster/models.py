@@ -212,6 +212,8 @@ class Device(models.Model):
     accept_new_hostkey = models.BooleanField(verbose_name="Accept new host key", default=False,
                                          help_text="Set this flag to accept a changed host key.")
 
+    latest_reports = models.ManyToManyField("Report", editable=False, related_name="latest_device")
+
     def __unicode__(self):
         return self.name if self.name else self.hostname
 
@@ -238,7 +240,7 @@ class Device(models.Model):
         return report
 
     @property
-    def latest_reports(self):
+    def _latest_reports(self):
         """
         Generate a list of (task, status, report) tuples with the latest
         report for each assigned task of the device.
@@ -256,6 +258,13 @@ class Device(models.Model):
                 continue
             reports.append((task, status, report))
         return reports
+
+    @property
+    def latest_reports_fallback(self):
+        if not self.latest_reports.count():
+            return [None]
+        else:
+            return self.latest_reports.all()
 
     def get_status_for_report(self, report):
         if not self.is_enabled():
@@ -291,6 +300,10 @@ class Device(models.Model):
 
         return filename
 
+    def remove_latest_reports_for_task(self, task):
+        for report in self.latest_reports.filter(task=task):
+            self.latest_reports.remove(report)
+
 
 class Report(models.Model):
     class Meta:
@@ -298,7 +311,7 @@ class Report(models.Model):
 
     device = models.ForeignKey(Device, editable=False)
     task = models.ForeignKey(Task, editable=False)
-    date = models.DateTimeField(auto_now=True)
+    date = models.DateTimeField(auto_now_add=True)
 
     RESULT_SUCCESS = 0
     RESULT_FAILURE = 1
@@ -312,9 +325,11 @@ class Report(models.Model):
     output = models.TextField(editable=False)
     long_output = models.TextField(editable=False, null=True)
 
+    result_url = models.TextField(editable=False)
+
     def result_is_success(self):
         return self.result == Report.RESULT_SUCCESS
 
     @property
-    def result_url(self):
+    def _result_url(self):
         return self.task.get_formatted_result_url(self.device)

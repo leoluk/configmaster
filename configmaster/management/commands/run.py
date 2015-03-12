@@ -135,6 +135,9 @@ class Command(BaseCommand):
         report.task = task
         report.output = output
         report.save()
+        device.remove_latest_reports_for_task(task)
+        device.latest_reports.add(report)
+        device.save()
         return result
 
     def handle(self, *args, **options):

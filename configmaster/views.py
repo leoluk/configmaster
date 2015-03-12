@@ -7,7 +7,7 @@ from configmaster.models import Device, Task
 
 class DashboardView(ListView):
     template_name = 'configmaster/dashboard.html'
-    queryset = Device.objects.order_by('-enabled', 'group', 'name').select_related('latest_report__date', 'latest_report__output', 'group__name')
+    queryset = Device.objects.order_by('-enabled', 'group', 'name').select_related('group__name').prefetch_related("latest_reports")
 
 class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):
