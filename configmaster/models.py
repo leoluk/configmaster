@@ -115,7 +115,7 @@ class Task(models.Model):
                                   help_text="A URL which points to the result of a task. Will be displayed in "
                                             "the frontend if the task has been successfully run at least once. "
                                             "<br/>The following placeholders are available: {label}, {hostname}, "
-                                            "{device_type}, {group} and {group_plural}.")
+                                            "{device_type}, {repo}, {group} and {group_plural}.")
 
     def __unicode__(self):
         return self.name
@@ -129,7 +129,8 @@ class Task(models.Model):
             hostname=device.hostname,
             device_type=device.device_type,
             group=device.group,
-            group_plural=device.group.plural.replace(' ', '')
+            group_plural=device.group.plural.replace(' ', ''),
+            repo=device.group.repository.name
         )
 
 
