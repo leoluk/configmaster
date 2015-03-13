@@ -1,6 +1,7 @@
+from django.core.management import call_command
 from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponse
-from django.views.decorators.cache import cache_page
+from django.shortcuts import render_to_response
 from django.views.generic import ListView, View
 
 from configmaster.models import Device, Task, DeviceGroup
@@ -14,6 +15,24 @@ class DashboardView(ListView):
 class VersionInfoView(ListView):
     template_name = 'configmaster/version_info.html'
     queryset = DeviceGroup.objects.prefetch_related("device_set").prefetch_related("device_set__device_type")
+
+
+class DashboardRunView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            device = Device.objects.get(label=request.REQUEST['device'])
+            task = Task.objects.get(id=request.REQUEST['task'])
+        except (Device.DoesNotExist, Task.DoesNotExist):
+            return HttpResponseNotFound("No such device or task")
+
+        call_command("run", device.label, "T-%d" % task.id)
+
+        report = device.latest_reports.filter(task=task).first()
+
+        return render_to_response("configmaster/dashboard_row.html", {
+            "device": device, "report": report,
+            "additional_task": list(device.latest_reports_fallback).index(report)
+        })
 
 
 class DeviceStatusAPIView(View):

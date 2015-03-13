@@ -291,7 +291,7 @@ class Device(locking.LockMixin, models.Model):
         if not self.latest_reports.count():
             return [None]
         else:
-            return self.latest_reports.exclude(
+            return self.latest_reports.order_by("task__id").exclude(
                 result=Report.RESULT_SUCCESS, task__hide_if_successful=True)
 
     def get_status_for_report(self, report):

@@ -4,7 +4,7 @@ import re
 import traceback
 from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
-from configmaster.models import Device, Report, DeviceGroup
+from configmaster.models import Device, Report, DeviceGroup, Task
 from configmaster.views import DashboardView
 from utils import locking
 
@@ -48,7 +48,8 @@ class Command(BaseCommand):
 
     help = "Config management run. Optionally specify devices or groups on" \
            " the command line. Exclude devices/groups by prepending them" \
-           " with %."
+           " with %. Specify T-N (where N is the task number) if you only" \
+           " want to run certain tasks (ex.: C1234 T-3)."
 
     def __init__(self):
         super(Command, self).__init__()
@@ -141,6 +142,7 @@ class Command(BaseCommand):
         report.result = result
         report.task = task
         report.output = output
+        report.result_url = report._result_url
         report.save()
         device.remove_latest_reports_for_task(task)
         device.latest_reports.add(report)
@@ -150,6 +152,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         devices = []
         excluded_devices = []
+        tasks = []
 
         run_lock = locking.FileLock("/run/%d" % hash(args))
         try:
@@ -161,6 +164,12 @@ class Command(BaseCommand):
         for label in args:
             if label.startswith('%'):
                 excluded_devices += self._resolve_arg(label[1:])
+            elif label.startswith('T-'):
+                try:
+                    task = Task.objects.get(id=int(label[2:]))
+                    tasks.append(task)
+                except (Task.DoesNotExist, ValueError):
+                    self.stderr.write("No task with id %s" % label[2:])
             else:
                 devices += self._resolve_arg(label)
 
@@ -192,6 +201,11 @@ class Command(BaseCommand):
                         self.stdout.write('Device %s, task "%s" skipped (disabled)'
                                           % (device.label, task.name))
                         continue
+                    if tasks:
+                        if not task in tasks:
+                            self.stdout.write('Device %s, task "%s" skipped (not included)'
+                                              % (device.label, task.name))
+                            continue
 
                     self.stdout.write("Acquiring device lock for device %s..." % device.label)
                     device.lock.acquire()

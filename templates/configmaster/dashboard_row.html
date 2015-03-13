@@ -1,0 +1,76 @@
+{% load icons %}
+{% load humanize %}
+{% load admin_urls %}
+
+<tr id="device-{{ device.label }}-task-{{ report.task.id }}"
+        {% if additional_task %}
+    class="additional_task">
+            <td></td>
+            <td></td>
+            <td class="additional_task_note">
+                {{ report.task.name }}:
+            </td>
+        {% else %}
+            >
+            <td>{{ device.group }}</td>
+            <td>{{ device.label }}</td>
+            <td>{{ device }}</td>
+        {% endif %}
+<td>
+    {% if not device.is_enabled %}
+        {% icon 'cog' %} Disabled
+    {% elif not report %}
+        {% icon 'error' %} No report found
+    {% else %}
+        {% if report.result_is_success %}
+            {% icon 'tick' %} {{ report.output }}
+        {% else %}
+            {% icon 'cancel' %}
+            {{ report.output | truncatechars:60 }}
+        {% endif %}
+    {% endif %}
+</td>
+<td>
+    {{ report.date | naturaltime }}
+</td>
+<td>
+    <div class="actions">
+        <a class="action" data-toggle="tooltip" title="Edit device" target="_blank"
+           href="{% url "admin:configmaster_device_change" device.id %}">
+            {% icon "wrench" %}
+        </a>
+        {% if report %}
+            <a class="action" data-toggle="tooltip" title="View report" target="_blank"
+               href="{% url "admin:configmaster_report_change" report.id %}">
+            {% icon "report" %}
+        {% else %}
+            <a>{% icon "report" classes="img_disabled" %}
+        {% endif %}
+        </a>
+        {% if device.is_enabled %}
+            <a class="action" data-toggle="tooltip" title="Manually run task"
+                    onclick="manual_run('{{ device.label }}', {{ report.task.id }});">
+            {% icon "cog" classes="manual_run" %}
+        {% else %}
+            <a>
+            {% icon "cog" classes="img_disabled" %}
+        {% endif %}
+        </a>
+        {% with report.result_url as url %}
+            {% if report.result_is_success and url %}
+                <a class="action" data-toggle="tooltip" title="Go to task result"
+                   href="{{ url }}" target="_blank">
+                {% icon "page_go" %}
+            {% else %}
+                <a>
+                {% icon "page_go" classes="img_disabled" %}
+            {% endif %}
+        </a>
+        {% endwith %}
+        <a class="action" data-toggle="tooltip" title="AssetDB lookup"
+           href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+        <a class="action" data-toggle="tooltip" title="PWSafe lookup"
+           href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
+    </div>
+</td>
+</tr>

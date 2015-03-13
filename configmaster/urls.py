@@ -7,6 +7,7 @@ from configmaster import views
 urlpatterns = patterns('',
     url(r'^$', RedirectView.as_view(url=reverse_lazy('dashboard'))),
     url(r'^dashboard$',(views.DashboardView.as_view()), name='dashboard'),
+    url(r'^dashboard/run_task$',(views.DashboardRunView.as_view()), name='dashboard_run_task'),
     url(r'^version_info',(views.VersionInfoView.as_view()), name='version_info'),
     url(r'^api/device_status$', views.DeviceStatusAPIView.as_view()),
 )
