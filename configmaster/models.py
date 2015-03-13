@@ -106,6 +106,13 @@ class DeviceGroup(models.Model):
     def device_set_ordered_by_type(self):
         return self.device_set.order_by("device_type", "-version_info").all()
 
+    @property
+    def config_backup_path(self):
+        return os.path.join(
+            self.repository.path,
+            RE_MATCH_FIRST_WORD.findall(
+                self.plural.replace(' ', ''))[0])
+
 
 class Task(models.Model):
     name = models.CharField(max_length=100)
@@ -320,12 +327,7 @@ class Device(locking.LockMixin, models.Model):
     @property
     def config_backup_filename(self):
         basename = '{}.txt'.format(self.label)
-        filename = os.path.join(
-            self.group.repository.path,
-            RE_MATCH_FIRST_WORD.findall(
-                self.group.plural.replace(' ', ''))[0],
-            basename)
-
+        filename = os.path.join(self.group.config_backup_path, basename)
         return filename
 
     def remove_latest_reports_for_task(self, task):
