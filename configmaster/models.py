@@ -377,6 +377,9 @@ class Report(models.Model):
 
     result_url = models.TextField(editable=False)
 
+    def __unicode__(self):
+        return "Report %d" % self.id
+
     def result_is_success(self):
         return self.result == Report.RESULT_SUCCESS
 

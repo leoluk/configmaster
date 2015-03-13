@@ -201,6 +201,14 @@ class Command(BaseCommand):
                         self.stdout.write('Device %s, task "%s" skipped (disabled)'
                                           % (device.label, task.name))
                         continue
+
+                    # Remove reports for tasks which are not assigned to the
+                    #  device's device type (example: happens after a device
+                    #  type change).
+
+                    for report in device.latest_reports.exclude(task__in=device.device_type.tasks.all()):
+                        device.latest_reports.remove(report)
+
                     if tasks:
                         if not task in tasks:
                             self.stdout.write('Device %s, task "%s" skipped (not included)'

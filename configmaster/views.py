@@ -29,9 +29,13 @@ class DashboardRunView(View):
 
         report = device.latest_reports.filter(task=task).first()
 
+        # Task disabled - remove row
+        if not report:
+            return HttpResponse("")
+
         return render_to_response("configmaster/dashboard_row.html", {
             "device": device, "report": report,
-            "additional_task": list(device.latest_reports_fallback).index(report)
+            "additional_task": list(device.latest_reports.order_by("task__id")).index(report)
         })
 
 
