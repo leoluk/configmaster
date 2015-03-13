@@ -86,6 +86,12 @@ class BaseHandler(object):
         """
         return self._return_success("We successfully did nothing at all")
 
+    def cleanup(self):
+        """
+        This method is called if an exception occurs during the task run.
+        """
+        pass
+
     @classmethod
     def run_completed(cls):
         """

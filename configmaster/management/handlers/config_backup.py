@@ -153,16 +153,19 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         filename, temp_dir, temp_filename = self._initialize_temporary_directory()
         self._read_config_from_device(temp_filename)
-
         self._cleanup_config(temp_filename)
 
         # Move the temporary file to the config folder and clean up
         # the temporary directory.
 
-        if os.path.exists(filename):
-            os.unlink(filename)
-        os.rename(temp_filename, filename)
-        shutil.rmtree(temp_dir)
+        self.device.group.repository.lock.acquire()
+
+        try:
+            if os.path.exists(filename):
+                os.unlink(filename)
+            os.rename(temp_filename, filename)
+        finally:
+            shutil.rmtree(temp_dir)
 
         # Git operations
 
@@ -186,6 +189,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             self.device.group, self.device.label)
         changes |= self._git_commit(commit_message)
 
+        self.device.group.repository.lock.release()
+
         # Extract version info
 
         if self.device.device_type.version_regex and changes:
@@ -195,11 +200,19 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             "no changes" if not changes else "changes found"
         ))
 
+    def cleanup(self):
+        if self.device.group.repository.lock.acquired:
+            os.chdir(self.device.group.repository.path)
+            git.reset('--hard')
+
     @classmethod
     def run_completed(cls):
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
 
         # Generate "ByHostname" symlinks
+
+        for repository in Repository.objects.all():
+            repository.lock.acquire()
 
         for device in Device.objects.all():
             symlink_dir = os.path.join(device.group.repository.path, "_ByHostname")
@@ -212,6 +225,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         # Git push and config filter commits
 
         if settings.TASK_CONFIG_BACKUP_DISABLE_GIT:
+            for repository in Repository.objects.all():
+                repository.lock.release()
             return
 
         for repository in Repository.objects.all():
@@ -244,4 +259,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             git.add("--", quote(filename))
             if cls._git_commit('Config filter for device type "%s" changed' % device_type.name):
                 git.push()
+
+        for repository in Repository.objects.all():
+            repository.lock.release()
+
 
