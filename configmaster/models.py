@@ -3,6 +3,7 @@ from django.conf import settings
 import os
 import re
 from django.contrib.auth.models import Group
+from utils import locking
 
 from django.db import models
 import django_auth_ldap.backend
@@ -80,7 +81,7 @@ class ConnectionSetting(models.Model):
             return self.name
 
 
-class Repository(models.Model):
+class Repository(locking.LockMixin, models.Model):
     class Meta:
         verbose_name_plural = "Repositories"
 
@@ -190,7 +191,7 @@ class DeviceType(models.Model):
         return self._version_regex
 
 
-class Device(models.Model):
+class Device(locking.LockMixin, models.Model):
 
     STATUS_DISABLED = 1
     STATUS_SUCCESS = 2

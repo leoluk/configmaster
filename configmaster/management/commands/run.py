@@ -6,6 +6,7 @@ from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
 from configmaster.models import Device, Report, DeviceGroup
 from configmaster.views import DashboardView
+from utils import locking
 
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
@@ -83,7 +84,11 @@ class Command(BaseCommand):
                 # Invoke the task handler methods (main part!)
 
                 with handler_obj.run_wrapper():
-                    _result = handler_obj.run()
+                    try:
+                        _result = handler_obj.run()
+                    finally:
+                        self.stdout.write("Running cleanup method...")
+                        handler_obj.cleanup()
                 if _result is None:
                     raise TaskExecutionError(
                         "Task handler did not return any data")
@@ -146,6 +151,13 @@ class Command(BaseCommand):
         devices = []
         excluded_devices = []
 
+        run_lock = locking.FileLock("/run/%d" % hash(args))
+        try:
+            run_lock.acquire(non_blocking=True)
+        except IOError:
+            self.stderr.write("A run with the same arguments is already in progress")
+            return
+
         for label in args:
             if label.startswith('%'):
                 excluded_devices += self._resolve_arg(label[1:])
@@ -174,13 +186,16 @@ class Command(BaseCommand):
                     self.stdout.write("No tasks for %s" % device.label)
                     continue
 
-                self.stdout.write("Processing %s..." % device.label)
 
                 for task in device.device_type.tasks.all():
                     if not task.enabled:
                         self.stdout.write('Device %s, task "%s" skipped (disabled)'
                                           % (device.label, task.name))
                         continue
+
+                    self.stdout.write("Acquiring device lock for device %s..." % device.label)
+                    device.lock.acquire()
+                    self.stdout.write("Running tasks...")
 
                     retries = 0
                     while True:
@@ -191,6 +206,8 @@ class Command(BaseCommand):
                         else:
                             break
 
+                    device.lock.release()
+
 
         # Call run_complete methods of all invoked task handlers
 
@@ -198,4 +215,5 @@ class Command(BaseCommand):
             self.stdout.write('Calling run_complete for task "%s"...' % task_name)
             func()
 
+        run_lock.release()
         self.stdout.write("Run completed.")
