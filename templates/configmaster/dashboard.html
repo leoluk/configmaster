@@ -1,10 +1,8 @@
 {% extends 'configmaster/app_base.html' %}
 
-{% block app_name %}Dashboard{% endblock %}
+{% load staticfiles %}
 
-{% load icons %}
-{% load humanize %}
-{% load admin_urls %}
+{% block app_name %}Dashboard{% endblock %}
 
 {% block content %}
 
@@ -12,7 +10,22 @@
         $(document).ready(function () {
                     $(".action").tooltip();
                 }
-        )
+        );
+
+        function manual_run(label, task_id) {
+            var row_id = "#device-" + label + '-task-' + task_id;
+            $(row_id+ " .manual_run")[0].src = '{% static "media/ajax-loader.gif" %}';
+            $.post("{% url "dashboard_run_task" %}", {
+                device: label,
+                task: task_id,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            }, function (data) {
+                $(row_id).replaceWith(data);
+                $(row_id + " .action").tooltip();
+            }).error(function(){
+                $(row_id+ " .manual_run")[0].src = '{% static "icons/cancel.png" %}';
+            });
+        }
     </script>
 
     <table class="table">
@@ -27,76 +40,7 @@
         {% for device in object_list %}
             {% for report in device.latest_reports_fallback %}
                 {% with forloop.counter0 as additional_task %}
-                    {% if additional_task %}
-                        <tr class="additional_task">
-                            <td></td>
-                            <td></td>
-                            <td class="additional_task_note">
-                                {{ report.task.name }}:
-                            </td>
-                            {% else %}
-                        <tr>
-                        <td>{{ device.group }}</td>
-                        <td>{{ device.label }}</td>
-                        <td>{{ device }}</td>
-                    {% endif %}
-                <td>
-                    {% if not device.is_enabled %}
-                        {% icon 'cog' %} Disabled
-                    {% elif not report %}
-                        {% icon 'error' %} No report found
-                    {% else %}
-                        {% if report.result_is_success %}
-                            {% icon 'tick' %} {{ report.output }}
-                        {% else %}
-                            {% icon 'cancel' %}
-                            {{ report.output | truncatechars:60 }}
-                        {% endif %}
-                    {% endif %}
-                </td>
-                <td>
-                    {{ report.date | naturaltime }}
-                </td>
-                <td>
-                    <div class="actions">
-                        <a class="action" data-toggle="tooltip" title="Edit device" target="_blank"
-                           href="{% url "admin:configmaster_device_change" device.id %}">
-                            {% icon "wrench" %}
-                        </a>
-                        {% if report %}
-                            <a class="action" data-toggle="tooltip" title="View report" target="_blank"
-                               href="{% url "admin:configmaster_report_change" report.id %}">
-                            {% icon "report" %}
-                        {% else %}
-                            <a>{% icon "report" classes="img_disabled" %}
-                        {% endif %}
-                        </a>
-                        {% if device.is_enabled %}
-                            <!--<a class="action" data-toggle="tooltip" title="Run now">-->
-                            {% icon "cog" classes="img_disabled" %}
-                        {% else %}
-                            <a>
-                            {% icon "cog" classes="img_disabled" %}
-                        {% endif %}
-                        </a>
-                        {% with report.result_url as url %}
-                            {% if report.result_is_success and url %}
-                                <a class="action" data-toggle="tooltip" title="Go to task result"
-                                   href="{{ url }}" target="_blank">
-                                {% icon "page_go" %}
-                            {% else %}
-                                <a>
-                                {% icon "page_go" classes="img_disabled" %}
-                            {% endif %}
-                        </a>
-                        {% endwith %}
-                        <a class="action" data-toggle="tooltip" title="AssetDB lookup"
-                           href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
-                        <a class="action" data-toggle="tooltip" title="PWSafe lookup"
-                           href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
-                    </div>
-                </td>
-                </tr>
+                    {% include "configmaster/dashboard_row.html" %}
                 {% endwith %}
             {% endfor %}
         {% endfor %}
