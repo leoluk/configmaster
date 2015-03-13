@@ -109,6 +109,8 @@ class Command(BaseCommand):
 
         except TaskExecutionError, e:
             result = Report.RESULT_FAILURE
+            if e.long_message:
+                report.long_output = e.long_message
             output = str(e)
 
         # Catch any exception raised by the task and log it to

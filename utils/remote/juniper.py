@@ -97,7 +97,6 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
         with self.ctx_term_setup():
             self.run_command("get config" +
                              (" saved"  if startup_config else ""))
-            self.expect_prompt()
             return self.interact.current_output_clean.strip("ssg5-serial->").strip()
 
     def read_sysinfo(self):

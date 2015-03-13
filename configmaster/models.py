@@ -103,7 +103,7 @@ class DeviceGroup(models.Model):
 
     @property
     def device_set_ordered_by_type(self):
-        return self.device_set.order_by("device_type").all()
+        return self.device_set.order_by("device_type", "-version_info").all()
 
 
 class Task(models.Model):
@@ -155,6 +155,12 @@ class DeviceType(models.Model):
     version_regex = models.CharField(max_length=120,
                                      help_text="Regular expression which extracts version information. "
                                                "The regex is applied to the first five config lines (line per line!).", blank=True)
+
+    alternative_config_compare = models.BooleanField(
+        help_text='Compare configs using an interactive session (req. for Juniper SSG). '
+                  'If a version retrieval method is present, the version info will be '
+                  'read from the device.', default=False
+    )
 
     def __init__(self, *args, **kwargs):
         super(DeviceType, self).__init__(*args, **kwargs)
@@ -263,6 +269,9 @@ class Device(models.Model):
         report for each assigned task of the device.
 
         Called from the dashboard view template.
+
+        Deprecated! (see commit 9d75caff51df, the latest report for each
+        task is now stored in the database)
         """
         reports = []
         if not self.device_type:
@@ -281,7 +290,8 @@ class Device(models.Model):
         if not self.latest_reports.count():
             return [None]
         else:
-            return self.latest_reports.all()
+            return self.latest_reports.exclude(
+                result=Report.RESULT_SUCCESS, task__hide_if_successful=True)
 
     def get_status_for_report(self, report):
         if not self.is_enabled():

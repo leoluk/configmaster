@@ -158,6 +158,8 @@ class NetworkDeviceRemoteControl(SSHRemoteControl):
     def __init__(self, *args, **kwargs):
         super(NetworkDeviceRemoteControl, self).__init__(*args, **kwargs)
         self.allocate_pty = False
+        # set to True to prevent ctx_term_setup terminal setup/teardown
+        self.terminal_setup = False
 
     def change_admin_password(self, new_password, verify=True):
         raise NotImplementedError
@@ -194,11 +196,14 @@ class NetworkDeviceRemoteControl(SSHRemoteControl):
 
     @contextmanager
     def ctx_term_setup(self):
-        try:
-            self.setup_terminal()
+        if self.terminal_setup:
             yield
-        finally:
-            self.teardown_terminal()
+        else:
+            try:
+                self.setup_terminal()
+                yield
+            finally:
+                self.teardown_terminal()
 
 
 class GuessingFirewallRemoteControl(NetworkDeviceRemoteControl):

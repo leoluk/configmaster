@@ -2,7 +2,10 @@ from contextlib import contextmanager
 from configmaster.models import Report
 
 
-class TaskExecutionError(RuntimeError): pass
+class TaskExecutionError(RuntimeError):
+    def __init__(self, message, long_message=None):
+        super(TaskExecutionError, self).__init__(message)
+        self.long_message = long_message
 
 
 class BaseHandler(object):
@@ -30,6 +33,18 @@ class BaseHandler(object):
 
         """
         raise TaskExecutionError(message % fmt if fmt else message)
+
+    @staticmethod
+    def _fail_long_message(message, long_message, *fmt):
+        """
+        See _fail.
+
+        long_message is stored in an additional field in the database, but
+        not shown in the dashboard.
+        """
+        raise TaskExecutionError(
+            message % fmt if fmt else message, long_message
+        )
 
     @staticmethod
     def _return_success(message, *args):

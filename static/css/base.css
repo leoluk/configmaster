@@ -43,4 +43,7 @@ body {
     color: #808080;
 }
 
-
+.container {
+    /* evil layout fix - might break bootstrap grid layout */
+    /* max-width: 1190px; */
+}
