@@ -15,8 +15,6 @@ class Command(BaseCommand):
     
     """
 
-    # TODO: propagate out-of-service state (T55)
-
     help = "Import data from PasswordSafe"
 
     # noinspection PyMethodMayBeStatic
