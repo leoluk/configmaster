@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, call_command
 import json
 import requests
 
@@ -98,3 +98,5 @@ class Command(BaseCommand):
                     device.device_type = device_type
 
             device.save()
+
+        call_command("archive_old_configs", stdout=self.stdout, stderr=self.stderr)
