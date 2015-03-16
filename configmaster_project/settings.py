@@ -125,5 +125,6 @@ CACHES = {
 }
 
 CONFIGMASTER_RETRIES = 1
+CONFIGMASTER_SECURE_GROUP = "(secure)"
 
 from local_settings import *

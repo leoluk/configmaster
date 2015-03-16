@@ -1,4 +1,5 @@
 from django.core.management import call_command
+from django.core.urlresolvers import reverse
 from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponse
 from django.shortcuts import render_to_response
@@ -58,6 +59,17 @@ class DeviceStatusAPIView(View):
 
         if status in (device.STATUS_SUCCESS, device.STATUS_ERROR):
             status_text += ": " + report.output
+
+        if report and report.long_output:
+            if device.group.is_security_sensitive:
+                url = reverse('admin:%s_%s_change' %(
+                    report._meta.app_label, report._meta.module_name),
+                              args=[report.id] )
+                status_text += '\n\n(security sensitive device, output omitted - see %s)' % (
+                    request.build_absolute_uri(url)
+                )
+            else:
+                status_text += '\n\n'+report.long_output
 
         return HttpResponse(status_text, content_type='text/plain')
 
