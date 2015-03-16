@@ -241,10 +241,6 @@ class Device(locking.LockMixin, models.Model):
     group = models.ForeignKey(DeviceGroup, null=True, blank=True)
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
 
-    data_model = models.CharField("Device model", max_length=100, blank=True)
-    data_firmware = models.CharField("Firmware revision", max_length=100, blank=True)
-    data_serial = models.CharField("Serial number", max_length=100, blank=True)
-
     # Paramiko is configured to use the OpenSSH known_hosts file. This flag
     # is needed because CM runs are non- interactive by default, so we need
     # another way to approve host key changes.
@@ -253,7 +249,12 @@ class Device(locking.LockMixin, models.Model):
                                          help_text="Set this flag to accept a changed host key.")
 
     latest_reports = models.ManyToManyField("Report", editable=False, related_name="latest_device")
-    version_info = models.TextField("Version info", editable=False, blank=True)
+    version_info = models.TextField("Version info", blank=True)
+
+    known_by_nagios = models.BooleanField(
+        help_text="This flag will be set whenever the device status is "
+                  "requested by Nagios.", default=False
+    )
 
     def __unicode__(self):
         return self.name if self.name else self.hostname
