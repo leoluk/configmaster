@@ -55,6 +55,14 @@ class DeviceStatusAPIView(View):
         report = device.get_latest_report_for_task(task)
         status = device.get_status_for_report(report)
 
+        if task.master_task and status != device.STATUS_SUCCESS:
+            master_report = device.get_latest_report_for_task(task.master_task)
+            if master_report:
+                master_status = device.get_status_for_report(master_report)
+                if master_status != device.STATUS_SUCCESS:
+                    return HttpResponse("Disabled: main check failed",
+                                        content_type='text/plain')
+
         status_text = dict(device.STATUS_CHOICES)[status]
 
         if status in (device.STATUS_SUCCESS, device.STATUS_ERROR):
