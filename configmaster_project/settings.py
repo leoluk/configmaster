@@ -36,8 +36,6 @@ INSTALLED_APPS = (
     'configmaster',
     'south',
     'icons_famfamfam',
-    'dajaxice',
-    'dajax',
     #'debug_toolbar',
 )
 
