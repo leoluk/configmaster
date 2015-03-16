@@ -112,7 +112,7 @@ class DeviceGroup(models.Model):
         return os.path.join(
             self.repository.path,
             RE_MATCH_FIRST_WORD.findall(
-                self.plural.replace(' ', ''))[0])
+                self.plural.replace(' ', '').replace(settings.CONFIGMASTER_SECURE_GROUP_PLURAL, ''))[0])
 
     @property
     def is_security_sensitive(self):
