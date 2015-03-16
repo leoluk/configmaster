@@ -134,6 +134,10 @@ class Task(models.Model):
                                             "<br/>The following placeholders are available: {label}, {hostname}, "
                                             "{device_type}, {repo}, {group}, {group_plural} and {group_path_component}.")
 
+    master_task = models.ForeignKey("Task", blank=True, null=True,
+                                    help_text='If a master task is set, the Nagios output will be set to "Disabled"'
+                                              'if both tasks were unsuccessful.')
+
     def __unicode__(self):
         return self.name
 
