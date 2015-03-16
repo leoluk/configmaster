@@ -61,15 +61,15 @@ class DeviceStatusAPIView(View):
             status_text += ": " + report.output
 
         if report and report.long_output:
+            url = reverse('admin:%s_%s_change' %(
+                report._meta.app_label, report._meta.module_name),
+                          args=[report.id] )
+            url = request.build_absolute_uri(url)
+
             if device.group.is_security_sensitive:
-                url = reverse('admin:%s_%s_change' %(
-                    report._meta.app_label, report._meta.module_name),
-                              args=[report.id] )
-                status_text += '\n\n(security sensitive device, output omitted - see %s)' % (
-                    request.build_absolute_uri(url)
-                )
+                status_text += '\n\n(security sensitive device, output omitted - see %s)' % url
             else:
-                status_text += '\n\n'+report.long_output
+                status_text += '\n\n'+report.long_output+", report: %s" % report
 
         return HttpResponse(status_text, content_type='text/plain')
 
