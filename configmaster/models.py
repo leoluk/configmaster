@@ -114,6 +114,10 @@ class DeviceGroup(models.Model):
             RE_MATCH_FIRST_WORD.findall(
                 self.plural.replace(' ', ''))[0])
 
+    @property
+    def is_security_sensitive(self):
+        return settings.CONFIGMASTER_SECURE_GROUP in self.name
+
 
 class Task(models.Model):
     name = models.CharField(max_length=100)
