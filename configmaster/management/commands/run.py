@@ -11,6 +11,11 @@ from utils import locking
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
 
+# TODO: do not retry status
+DO_NOT_RETRY = (
+    "Running/startup config differ",
+)
+
 
 class Command(BaseCommand):
     """
@@ -147,7 +152,7 @@ class Command(BaseCommand):
         device.remove_latest_reports_for_task(task)
         device.latest_reports.add(report)
         device.save()
-        return result
+        return report, result
 
     def handle(self, *args, **options):
         devices = []
@@ -221,8 +226,10 @@ class Command(BaseCommand):
 
                     retries = 0
                     while True:
-                        output = self.run_task(device, task)
-                        if output == Report.RESULT_FAILURE and retries < settings.CONFIGMASTER_RETRIES:
+                        report, result = self.run_task(device, task)
+                        if ((result == Report.RESULT_FAILURE) and
+                                (retries < settings.CONFIGMASTER_RETRIES) and
+                                (not any(x in report.output for x in DO_NOT_RETRY))):
                             retries += 1
                             self.stdout.write('Retrying... (%d/%d)' % (retries, settings.CONFIGMASTER_RETRIES))
                         else:
