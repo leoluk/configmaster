@@ -52,6 +52,9 @@ class DeviceStatusAPIView(View):
         except KeyError:
             return HttpResponseBadRequest("Missing parameter")
 
+        device.known_by_nagios = True
+        device.save()
+
         report = device.get_latest_report_for_task(task)
         status = device.get_status_for_report(report)
 

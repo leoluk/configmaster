@@ -7,8 +7,9 @@ import adminactions.actions as actions
 
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("label", "name", "hostname", "group", "device_type", "enabled", "version_info")
-    list_filter = ("group", "device_type", "do_not_use_scp", "enabled")
+    list_filter = ("group", "device_type", "do_not_use_scp", "enabled", "known_by_nagios")
     search_fields = ("name", "hostname")
+    readonly_fields = ("known_by_nagios", "version_info")
 
     fieldsets = (
         ("Basic info", {
@@ -17,9 +18,8 @@ class DeviceAdmin(admin.ModelAdmin):
         ("Settings", {
             'fields': ('enabled', 'sync', 'credential', 'accept_new_hostkey', 'do_not_use_scp')
         }),
-        ('Config management data', {
-            'description': "Will get overwritten during the next run.",
-            'fields': ('data_model', 'data_firmware', 'data_serial'),
+        ('Info', {
+            'fields': ('known_by_nagios', 'version_info'),
         })
     )
 
@@ -29,7 +29,7 @@ class DeviceAdmin(admin.ModelAdmin):
 
         if obj:
             if obj.sync:
-                return "label", "name", "hostname", "group"
+                return fields + ("label", "name", "hostname", "group")
 
         return fields
 
