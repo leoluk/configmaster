@@ -2,7 +2,7 @@ from django.core.management import call_command
 from django.core.urlresolvers import reverse
 from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.views.generic import ListView, View
 
 from configmaster.models import Device, Task, DeviceGroup
@@ -24,7 +24,7 @@ class DashboardRunView(View):
             device = Device.objects.get(label=request.REQUEST['device'])
             task = Task.objects.get(id=request.REQUEST['task'])
         except (Device.DoesNotExist, Task.DoesNotExist):
-            return HttpResponseNotFound("No such device or task")
+            return HttpResponseBadRequest("No such device or task")
 
         call_command("run", device.label, "T-%d" % task.id)
 
@@ -46,7 +46,7 @@ class DeviceStatusAPIView(View):
             device = Device.objects.get(label=request.REQUEST['device'])
             task = Task.objects.get(id=request.REQUEST['task'])
         except Device.DoesNotExist:
-            return HttpResponseNotFound("No such device")
+            return HttpResponseBadRequest("No such device")
         except Task.DoesNotExist:
             return HttpResponseBadRequest("No such task")
         except KeyError:
@@ -85,4 +85,29 @@ class DeviceStatusAPIView(View):
         return HttpResponse(status_text, content_type='text/plain')
 
 
+class RedirectView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            type_ = request.REQUEST['type']
+            if type_ not in ('report', 'result'):
+                return HttpResponseBadRequest("Invalid parameter")
+            device = Device.objects.get(label=request.REQUEST['device'])
+            task = Task.objects.get(id=request.REQUEST['task'])
+            report = device.get_latest_report_for_task(task)
 
+            if not report:
+                return HttpResponseBadRequest("No report for task")
+
+        except Device.DoesNotExist:
+            return HttpResponseBadRequest("No such device")
+        except Task.DoesNotExist:
+            return HttpResponseBadRequest("No such task")
+        except KeyError:
+            return HttpResponseBadRequest("Missing parameter")
+
+        if type_ == 'report':
+            return redirect(reverse('admin:%s_%s_change' %(
+                report._meta.app_label, report._meta.module_name),
+                          args=[report.id]))
+        elif type_ == 'result':
+            return redirect(report.result_url)
