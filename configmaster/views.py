@@ -69,7 +69,7 @@ class DeviceStatusAPIView(View):
             if device.group.is_security_sensitive:
                 status_text += '\n\n(security sensitive device, output omitted - see %s)' % url
             else:
-                status_text += '\n\n'+report.long_output+", report: %s" % url
+                status_text += ('\n\nReport: %s' % url)+'\n\n'+report.long_output
 
         return HttpResponse(status_text, content_type='text/plain')
 
