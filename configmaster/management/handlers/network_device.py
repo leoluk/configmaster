@@ -149,8 +149,10 @@ class NetworkDeviceHandler(SSHDeviceHandler):
     def run_wrapper(self, *args, **kwargs):
         with super(NetworkDeviceHandler, self).run_wrapper(*args, **kwargs):
             self._connect_ssh()
-            yield
-            self.connection.close()
+            try:
+                yield
+            finally:
+                self.connection.close()
 
 
 class SSHLoginTestHandler(NetworkDeviceHandler):
