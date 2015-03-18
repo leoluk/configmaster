@@ -177,9 +177,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         # Commit config changes
 
         git.add('-u')
-        commit_message = u"{} config change on {}{}".format(
-            self.device.group, self.device.label,
-            u" ({})".format(self.device.name) if self.device.name else "")
+        commit_message = u"{} config change on {} ({})".format(
+            self.device.group, self.device.label, self.device)
         changes = self._git_commit(commit_message)
 
         # Commit any new, previously untracked configs
