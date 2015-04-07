@@ -35,6 +35,7 @@ class DLinkConfigBackupHandler(BaseHandler):
 
     def _connect_sock(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(3)
         s.setsockopt(socket.IPPROTO_TCP, socket.TCP_CORK, 1)
         s.connect((self.device.hostname, 80))
         return s
