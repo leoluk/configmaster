@@ -1,3 +1,4 @@
+import json
 import socket
 import urllib
 from django.conf import settings
@@ -83,6 +84,14 @@ class DLinkConfigBackupHandler(BaseHandler):
 
         with open(filename, 'wb') as f:
             f.write(req.content)
+
+        version_url = "http://%s/iss/specific/Device.js?Gambit=%s" % \
+                      (self.device.hostname, token)
+        req = requests.get(version_url)
+        self.device.version_info = ' - '.join(json.loads(
+            req.text.split("Switch_Status = ", 1)[1]
+                .split(';', 1)[0].replace("'", '"'))[:2])
+        self.device.save()
 
         # Git operations
 
