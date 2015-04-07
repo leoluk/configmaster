@@ -29,11 +29,7 @@ class SSHDeviceHandler(BaseHandler):
         """
 
         super(SSHDeviceHandler, self).__init__(device)
-
-        if self.device.credential:
-            self.credential = self.device.credential
-        else:
-            self.credential = self.device.device_type.credential
+        self.credential = self.device.get_credential()
         if not self.device.device_type.connection_setting:
             self._fail("No connection setting for device")
         elif not (self.device.device_type.connection_setting.ssh_port or

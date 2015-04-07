@@ -274,6 +274,15 @@ class Device(locking.LockMixin, models.Model):
     def number_of_successful_runs(self):
         return self.report_set.filter(result=Report.RESULT_SUCCESS).count()
 
+    def get_credential(self):
+        """
+        :rtype : Credential
+        """
+        if self.credential:
+            return self.credential
+        else:
+            return self.device_type.credential
+
     def get_latest_report_for_task(self, task):
         try:
             report = self.report_set.filter(task=task).latest()
