@@ -37,7 +37,7 @@ class BaseRemoteControl(object):
 # TODO: verbose logging
 
 class SSHRemoteControl(BaseRemoteControl):
-    def __init__(self, hostname, port=22, timeout=3, cmd_timeout=10,
+    def __init__(self, hostname, port=22, timeout=5, cmd_timeout=20,
                  hostkey_change_cb=lambda: False):
         super(SSHRemoteControl, self).__init__(hostname)
         self.transport = None
