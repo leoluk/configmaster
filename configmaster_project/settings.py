@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 import ldap
 import os
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Directories
@@ -36,7 +37,7 @@ INSTALLED_APPS = (
     'configmaster',
     'south',
     'icons_famfamfam',
-    #'debug_toolbar',
+    # 'debug_toolbar',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -72,7 +73,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-LOGIN_ALLOWED_GROUPS = ("ldapGroup", )
+LOGIN_ALLOWED_GROUPS = ("ldapGroup",)
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 
@@ -81,7 +82,6 @@ TEMPLATE_CONTEXT_PROCESSORS += (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.debug'
 )
-
 
 ROOT_URLCONF = 'configmaster_project.urls'
 
@@ -127,5 +127,27 @@ CACHES = {
 CONFIGMASTER_RETRIES = 1
 CONFIGMASTER_SECURE_GROUP = "(secure)"
 CONFIGMASTER_SECURE_GROUP_PLURAL = "secure-"
+
+# Session backend
+
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_SERIALIZER = "serializers.JSONSerializer"
+
+# ESXi backup (example config)
+
+# ESXI_BACKUP = (
+#     ('esx01.example.com',
+#       'http://192.168.50.50:8888/configBundle-192.168.50.50.tgz'),
+#     ('esx02.example.com',
+#       'http://192.168.50.50:8888/configBundle-192.168.50.50.tgz'),
+#     ('esx03.example.com',
+#       'http://192.168.50.50:8888/configBundle-192.168.50.50.tgz'),
+# )
+
+ESXI_FILE_BLACKLIST = (
+    'state.tgz',
+    'local.tgz',
+    'etc/vmware/.backup.counter'
+)
 
 from local_settings import *
