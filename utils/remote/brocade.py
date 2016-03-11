@@ -9,7 +9,7 @@ class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
         super(BrocadeRemoteControl, self).__init__(*args, **kwargs)
 
-        self._date_format = "%H:%M:%S.%f %a %b %d %Y"
+        self._date_format = "%H:%M:%S %a %b %d %Y"
 
     def connect(self, username, password, open_command_channel=True,
                 open_scp_channel=False):
@@ -35,7 +35,7 @@ class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
 
     def get_raw_time(self):
         time = self.run_command('show clock').strip().split('\n', 1)[-1].split()
-        return ' '.join([time[0]] + time[2:])
+        return ' '.join([time[0].split('.', 1)[0]] + time[2:])
 
 
 if __name__ == '__main__':
