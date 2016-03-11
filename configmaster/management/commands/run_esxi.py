@@ -131,6 +131,7 @@ class Command(BaseCommand):
             os.chdir(repo_dir)
 
             try:
+                sh.git.add('-A', '.')
                 if NetworkDeviceConfigBackupHandler._git_commit("ESXi config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
@@ -146,6 +147,7 @@ class Command(BaseCommand):
             os.chdir(settings.ESXI_BACKUP_REPO_RAW)
 
             try:
+                sh.git.add('-A', '.')
                 if NetworkDeviceConfigBackupHandler._git_commit("ESXi config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
@@ -153,10 +155,7 @@ class Command(BaseCommand):
                     "Git commit or push failed: " + str(e))
                 continue
 
-            if False:
-                pass
-
-            # TODO: rm tempdir
+            shutil.rmtree(tempdir)
             run_lock.release()
 
         global_lock.release()
