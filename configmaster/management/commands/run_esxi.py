@@ -131,7 +131,8 @@ class Command(BaseCommand):
             os.chdir(repo_dir)
 
             try:
-                sh.git.add('-A', '.')
+                sh.git.add('-u', '.')
+                sh.git.add('.')
                 if NetworkDeviceConfigBackupHandler._git_commit("ESXi config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
@@ -140,15 +141,16 @@ class Command(BaseCommand):
                 continue
 
             sh.cp(
-                os.path.join(tempdir, 'state1.tgz'),
+                os.path.join(tempdir, 'stage1.tgz'),
                 os.path.join(settings.ESXI_BACKUP_REPO_RAW, '%s.tgz' % name)
             )
 
             os.chdir(settings.ESXI_BACKUP_REPO_RAW)
 
             try:
-                sh.git.add('-A', '.')
-                if NetworkDeviceConfigBackupHandler._git_commit("ESXi config change (%s)" % name):
+                sh.git.add('-u', '.')
+                sh.git.add('.')
+                if NetworkDeviceConfigBackupHandler._git_commit("ESXi raw config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
                 self.stderr.write(
@@ -157,6 +159,10 @@ class Command(BaseCommand):
 
             shutil.rmtree(tempdir)
             run_lock.release()
+
+        for path in (settings.ESXI_BACKUP_REPO_RAW, settings.ESXI_BACKUP_REPO):
+            os.chdir(path)
+            sh.git.push()
 
         global_lock.release()
         self.stdout.write("Run completed.")
