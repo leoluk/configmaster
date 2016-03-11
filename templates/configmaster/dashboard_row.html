@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load icons %}
 {% load humanize %}
 {% load admin_urls %}
@@ -49,7 +50,7 @@
         </a>
         {% if device.is_enabled %}
             <a class="action" data-toggle="tooltip" title="Manually run task"
-                    onclick="manual_run('{{ device.label }}', {{ report.task.id }});">
+               onclick="manual_run('{{ device.label }}', {{ report.task.id }});">
             {% icon "cog" classes="manual_run" %}
         {% else %}
             <a>
@@ -67,8 +68,13 @@
             {% endif %}
         </a>
         {% endwith %}
-        <a class="action" data-toggle="tooltip" title="AssetDB lookup"
-           href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+        {% if not device.has_x_label %}
+            <a class="action" data-toggle="tooltip" title="AssetDB lookup"
+               href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}
+        {% else %}
+            <a class="action" data-toggle="tooltip" title="No AssetDB sync!">{% icon "database_error" %}
+        {% endif %}
+        </a>
         <a class="action" data-toggle="tooltip" title="PWSafe lookup"
            href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
     </div>

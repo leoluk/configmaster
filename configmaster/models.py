@@ -374,6 +374,13 @@ class Device(locking.LockMixin, models.Model):
         except IOError:
             return "Error: no config"
 
+    def has_x_label(self):
+        """
+        A device which has an X label is not synchronized from AssetDB, but
+        has been manually added to PWSafe.
+        :rtype : bool
+        """
+        return self.label[0] == "X"
 
 class Report(models.Model):
     class Meta:
