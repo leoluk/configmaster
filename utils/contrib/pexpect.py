@@ -103,6 +103,10 @@ class SSHClientInteraction:
             # Read some of the output
             buffer = self.channel.recv(self.buffer_size)
 
+            # Uncomment these statements for debugging
+            #print repr(buffer)
+            #print buffer
+
             # If we have an empty buffer, then the SSH session has been closed
             if len(buffer) == 0:
                 break

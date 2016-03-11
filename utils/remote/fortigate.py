@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+
 import re
 
 import common
@@ -6,12 +7,13 @@ import common
 __author__ = 'lschabel'
 
 RE_SYSINFO = re.compile(r""".*^.*?Version:\s+(?P<model>.+?)\s(?P<swrev>.+?)$.*
-^Serial-Number:\s+(?P<serial>FG.+?)$""", re.DOTALL | re.MULTILINE)
+^Serial-Number:\s+(?P<serial>FG.+?)$.*^System time:\s+(?P<date>.+?)$""", re.DOTALL | re.MULTILINE)
 
 
 class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
         super(FortigateRemoteControl, self).__init__(*args, **kwargs)
+        self._date_format = "%a %b %d %H:%M:%S %Y"
 
     def expect_prompt(self, in_block=False):
         if in_block:
@@ -109,13 +111,11 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
             self.run_command("set admin-scp enable", True)
 
     def read_sysinfo(self):
-        #with self.ctx_term_setup():
-        if True:
-            output = self.run_command("get system status")
-            match = RE_SYSINFO.match(output)
+        output = self.run_command("get system status")
+        match = RE_SYSINFO.match(output)
 
-            if match:
-                return match.groupdict()
+        if match:
+            return match.groupdict()
 
     @contextmanager
     def ctx_config_block(self, path):
@@ -147,8 +147,11 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
             self.interact.send("exit")
         super(FortigateRemoteControl, self).close()
 
+    def get_raw_time(self):
+        return self.read_sysinfo()['date']
 
 if __name__ == '__main__':
     import getpass
-    rc = FortigateRemoteControl("c93f.continum.net", port=2222, timeout=1)
-    rc.connect("root", getpass.getpass())
+    rc = FortigateRemoteControl("c93f.continum.net", timeout=1)
+    rc.connect("lschabel", getpass.getpass())
+    print repr(rc.get_time())
