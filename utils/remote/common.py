@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import socket
+from datetime import datetime
 import os
 import paramiko
 import binascii
@@ -160,6 +161,7 @@ class NetworkDeviceRemoteControl(SSHRemoteControl):
         self.allocate_pty = False
         # set to True to prevent ctx_term_setup terminal setup/teardown
         self.terminal_setup = False
+        self._date_format = ""
 
     def change_admin_password(self, new_password, verify=True):
         raise NotImplementedError
@@ -188,6 +190,12 @@ class NetworkDeviceRemoteControl(SSHRemoteControl):
 
     def teardown_terminal(self):
         raise NotImplementedError
+
+    def get_raw_time(self):
+        raise NotImplementedError
+
+    def get_time(self):
+        return datetime.strptime(self.get_raw_time(), self._date_format)
 
     def run_command(self, command):
         self.interact.send(command)

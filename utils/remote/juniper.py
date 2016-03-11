@@ -17,6 +17,7 @@ RE_SYSINFO = re.compile(
 class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
         super(JuniperRemoteControl, self).__init__(*args, **kwargs)
+        self._date_format = '%m/%d/%Y %H:%M:%S'
 
     def change_admin_password(self, new_password, verify=True):
         # TODO: verify that login user is admin user ("get admin name")
@@ -124,10 +125,13 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
             self.interact.send("exit")
         super(JuniperRemoteControl, self).close()
 
+    def get_raw_time(self):
+        output = self.run_command('get clock')
+        return ' '.join(output.split('\n')[0].split()[1:3])[:-1]
 
 if __name__ == '__main__':
     import getpass
 
-    rc = JuniperRemoteControl("192.168.50.50", port=2222, timeout=1)
-    rc.connect("root", getpass.getpass())
-    rc.change_admin_password(getpass.getpass())
+    rc = JuniperRemoteControl("juniper.continum.net", timeout=1)
+    rc.connect("lschabel", getpass.getpass())
+    print rc.get_time()

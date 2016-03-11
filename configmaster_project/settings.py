@@ -103,7 +103,7 @@ DATABASES = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
@@ -128,10 +128,11 @@ CONFIGMASTER_RETRIES = 1
 CONFIGMASTER_SECURE_GROUP = "(secure)"
 CONFIGMASTER_SECURE_GROUP_PLURAL = "secure-"
 
+CONFIGMASTER_NTP_MAX_DELTA = 5
+
 # Session backend
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
-SESSION_SERIALIZER = "serializers.JSONSerializer"
 
 # ESXi backup (example config)
 
