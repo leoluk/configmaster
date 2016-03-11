@@ -145,15 +145,16 @@ class Task(models.Model):
         """
         :type device: Device
         """
-        return self.result_url.format(
-            label=device.label,
-            hostname=device.hostname,
-            device_type=device.device_type,
-            group=device.group,
-            group_plural=device.group.plural.replace(' ', ''),
-            group_path_component=os.path.split(device.group.config_backup_path)[-1],
-            repo=device.group.repository.name
-        )
+        if self.result_url:
+            return self.result_url.format(
+                label=device.label,
+                hostname=device.hostname,
+                device_type=device.device_type,
+                group=device.group,
+                group_plural=device.group.plural.replace(' ', ''),
+                group_path_component=os.path.split(device.group.config_backup_path)[-1],
+                repo=device.group.repository.name
+            )
 
 
 class DeviceType(models.Model):
@@ -394,7 +395,7 @@ class Report(models.Model):
     output = models.TextField(editable=False)
     long_output = models.TextField(editable=False, null=True)
 
-    result_url = models.TextField(editable=False)
+    result_url = models.TextField(editable=False, null=True)
 
     def __unicode__(self):
         return "Report %d" % self.id
