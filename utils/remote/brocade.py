@@ -35,7 +35,7 @@ class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
 
     def get_raw_time(self):
         time = self.run_command('show clock').strip().split('\n', 1)[-1].split()
-        return ' '.join([time[0].split('.', 1)[0]] + time[2:])
+        return ' '.join([time[0].split('.', 1)[0].rstrip(',')] + time[2:])
 
 
 if __name__ == '__main__':
