@@ -2,7 +2,7 @@ import re
 
 from utils.remote import common
 
-RE_OUTPUT = re.compile(r'(?:\w+@\w+[>#])?(.*)', re.DOTALL)
+RE_OUTPUT = re.compile(r'(?:\w+@.+?[>#])?(.*)', re.DOTALL)
 
 
 class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
