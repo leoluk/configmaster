@@ -148,7 +148,9 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 ESXI_FILE_BLACKLIST = (
     'state.tgz',
     'local.tgz',
-    'etc/vmware/.backup.counter'
+    'etc/vmware/.backup.counter',
+    'etc/ntp.drift',
+    'etc/vmware/dvsdata.db',
 )
 
 from local_settings import *
