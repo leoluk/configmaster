@@ -42,6 +42,6 @@ if __name__ == '__main__':
     import getpass
 
     rc = BrocadeRemoteControl("brocade.continum.net", timeout=5)
-    rc.connect("lschabel", getpass.getpass())
+    rc.connect(common.DEBUG_USER, getpass.getpass())
 
     print repr(rc.get_time())

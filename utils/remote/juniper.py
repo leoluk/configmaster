@@ -133,5 +133,5 @@ if __name__ == '__main__':
     import getpass
 
     rc = JuniperRemoteControl("juniper.continum.net", timeout=1)
-    rc.connect("lschabel", getpass.getpass())
+    rc.connect(common.DEBUG_USER, getpass.getpass())
     print rc.get_time()
