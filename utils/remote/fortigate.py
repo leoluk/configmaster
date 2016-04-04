@@ -153,5 +153,5 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
 if __name__ == '__main__':
     import getpass
     rc = FortigateRemoteControl("c93f.continum.net", timeout=1)
-    rc.connect("lschabel", getpass.getpass())
+    rc.connect(common.DEBUG_USER, getpass.getpass())
     print repr(rc.get_time())

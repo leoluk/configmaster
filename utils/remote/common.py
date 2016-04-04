@@ -10,6 +10,9 @@ from paramiko.ssh_exception import SSHException
 
 from utils.contrib import scp, pexpect
 
+DEBUG_USER = "lschabel"
+
+
 def sanitize(value):
     return list2cmdline([value])
 
