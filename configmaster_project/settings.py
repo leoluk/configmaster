@@ -130,6 +130,8 @@ CONFIGMASTER_SECURE_GROUP_PLURAL = "secure-"
 
 CONFIGMASTER_NTP_MAX_DELTA = 5
 
+CONFIGMASTER_PW_CHANGE_API_KEY = "<insert API key here>"
+
 # Session backend
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"

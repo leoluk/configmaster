@@ -6,6 +6,19 @@
 
 {% block content %}
 
+    {% if hidden_devices %}
+        <div class="panel panel-default">
+            <div class="panel-body">
+                {{ hidden_devices }} inactive devices have been hidden from this view.
+                A device is considered inactive if there aren't any reports.
+
+                You can access these devices from the admin panel or manually
+                run a config backup using "manage.py run" on the command line
+                (see documentation).
+            </div>
+        </div>
+    {% endif %}
+
     <script type="text/javascript">
         $(document).ready(function () {
                     $(".action").tooltip();

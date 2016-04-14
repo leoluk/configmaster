@@ -27,7 +27,8 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
 
         if verify:
             if not self.verify_login(self.username, new_password):
-                raise OperationalError("Password change failed")
+                raise OperationalError(
+                    "Password change verification failed")
             else:
                 return True
 

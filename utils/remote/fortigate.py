@@ -43,7 +43,8 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
 
         if verify:
             if not self.verify_login(username, new_password):
-                raise common.OperationalError("Password change failed")
+                raise common.OperationalError(
+                    "Password change verification failed")
             else:
                 return True
 

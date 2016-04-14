@@ -1,16 +1,36 @@
+import json
+import traceback
+from django.conf import settings
+
 from django.core.management import call_command
 from django.core.urlresolvers import reverse
-from django.http.response import HttpResponseNotFound, HttpResponseBadRequest, \
+from django.http.response import HttpResponseBadRequest, \
     HttpResponse
 from django.shortcuts import render_to_response, redirect
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, View
+
+from configmaster.management.handlers.base import TaskExecutionError
+from configmaster.management.handlers.password_change import \
+    PasswordChangeHandler
 
 from configmaster.models import Device, Task, DeviceGroup
 
 
 class DashboardView(ListView):
     template_name = 'configmaster/dashboard.html'
-    queryset = Device.objects.order_by('-enabled', 'group', 'name').select_related('group__name').prefetch_related("latest_reports").prefetch_related("latest_reports__task")
+    queryset = (Device.objects.order_by('-enabled', 'group', 'name')
+                .select_related('group__name')
+                .prefetch_related("latest_reports")
+                .prefetch_related("latest_reports__task")
+                .exclude(latest_reports__isnull=True))
+
+    def get_context_data(self, **kwargs):
+        context = super(DashboardView, self).get_context_data(**kwargs)
+        # TODO: add a "show inactive devices" button
+        context['hidden_devices'] = Device.objects.filter(
+            latest_reports__isnull=True).count()
+        return context
 
 
 class VersionInfoView(ListView):
@@ -83,6 +103,82 @@ class DeviceStatusAPIView(View):
                 status_text += ('\n\nReport: %s' % url)+'\n\n'+report.long_output
 
         return HttpResponse(status_text, content_type='text/plain')
+
+
+class PasswordChangeAPIView(View):
+    """
+    Password change API handler.
+
+    HTTP POST parameters:
+
+        device: device label, assumed to be in the ConfigMaster database
+        username: login username
+        current_password: currently valid password for device login
+        new_password: password to be set
+
+    Right now, this view uses the same libraries, but is not coupled to the
+    task runner since the password change task does not fit the current task
+    model (for example: additional, secret parameters). We provide an API
+    endpoint for PWSafe to use, and the task queue and result storage is
+    managed by PWSafe. We still want to use the ConfigMaster SSH connection
+    settings for devices managed by ConfigMaster. This means that this view
+    calls the device handlers itself (re-consider when T47 is implemented!)
+    and needs to handle all possible failures that run.py handles.
+
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            api_key = request.REQUEST['api_key']
+
+            if api_key != settings.CONFIGMASTER_PW_CHANGE_API_KEY:
+                return HttpResponseBadRequest(
+                    "Invalid API key")
+
+            username = request.REQUEST['username']
+            current_password = request.REQUEST['current_password']
+            new_password = request.REQUEST['new_password']
+            device = Device.objects.get(label=request.REQUEST['device'])
+        except Device.DoesNotExist:
+            return HttpResponse(json.dumps({
+                'result': 'unknown',
+                'message': "No such device"}))
+
+        except KeyError:
+            return HttpResponseBadRequest("Missing parameter")
+
+        try:
+            handler = PasswordChangeHandler(
+                device, current_password, new_password, username)
+            with handler.run_wrapper():
+                try:
+                    state, result = handler.run()
+                finally:
+                    handler.cleanup()
+                if result is None:
+                    raise TaskExecutionError(
+                        "Task handler did not return any data")
+        except TaskExecutionError as e:
+            return HttpResponse(json.dumps({
+                'result': 'failure',
+                'message': (
+                    'Task failed with an error message:\n\n' +
+                    str(e) + '\n\n' + (e.long_message or ""))}))
+        except Exception as e:
+            return HttpResponse(json.dumps({
+                'result': 'failure',
+                'message': (
+                    'Exception during task execution:\n\n' +
+                    str(e) + '\n\n' + traceback.format_exc())}))
+
+        return HttpResponse(json.dumps({
+            'result': 'success',
+            'message': result}))
+
+    @csrf_exempt
+    def dispatch(self, request, *args, **kwargs):
+        return super(PasswordChangeAPIView, self).dispatch(
+            request, *args, **kwargs)
 
 
 class RedirectView(View):

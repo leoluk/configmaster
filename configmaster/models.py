@@ -1,13 +1,14 @@
 import logging
+
 from django.conf import settings
 import os
 import re
 from django.contrib.auth.models import Group
-from utils import locking
-
 from django.db import models
 import django_auth_ldap.backend
 
+from utils import locking
+from utils.ssh_config import lookup_host_in_ssh_config
 
 logger = logging.getLogger(__name__)
 
@@ -94,11 +95,19 @@ class Repository(locking.LockMixin, models.Model):
 
 
 class DeviceGroup(models.Model):
-    name = models.CharField("Group name", max_length=100)
+    name = models.CharField(
+        "Group name", max_length=100)
     plural = models.CharField(max_length=100)
-    enabled = models.BooleanField("Config management enabled for devices in group", default=True)
-    default_device_type = models.ForeignKey("DeviceType", null=True, blank=True)
-    repository = models.ForeignKey(Repository)
+
+    enabled = models.BooleanField(
+        "Config management enabled for devices in group", default=True)
+
+    default_device_type = models.ForeignKey(
+        "DeviceType", null=True, blank=True)
+
+    repository = models.ForeignKey(
+        Repository, blank=True, null=True,
+        help_text="Config repository for config back tasks")
 
     def __unicode__(self):
         return self.name
@@ -381,6 +390,20 @@ class Device(locking.LockMixin, models.Model):
         :rtype : bool
         """
         return self.label[0] == "X"
+
+    def get_ssh_connection_info(self):
+        """
+        Returns a (ssh_hostname, ssh_port) tuple according to device settings.
+        """
+        if self.device_type.connection_setting.use_ssh_config:
+            ssh_hostname, ssh_port = lookup_host_in_ssh_config(
+                self.hostname)
+        else:
+            ssh_port = self.device_type.connection_setting.ssh_port
+            ssh_hostname = self.hostname
+
+        return ssh_hostname, ssh_port
+
 
 class Report(models.Model):
     class Meta:

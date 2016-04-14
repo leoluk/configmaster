@@ -13,7 +13,7 @@ from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, 
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
 from utils.remote.procurve import ProCurveRemoteControl
-
+from utils.remote.unix import UnixRemoteControl
 
 RE_MATCH_FIRST_WORD = re.compile(r'\b\w+\b')
 
@@ -72,6 +72,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         u"Juniper SSG": JuniperRemoteControl,
         u"HP ProCurve": ProCurveRemoteControl,
         u"Brocade *Iron": BrocadeRemoteControl,
+        u"*NIX": UnixRemoteControl,
     }
 
     def __init__(self, device):
@@ -108,24 +109,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         :rtype : NetworkDeviceRemoteControl
         """
 
-        if self.device.device_type.connection_setting.use_ssh_config:
-            parser = paramiko.SSHConfig()
-            parser.parse(open(settings.TASK_CONFIG_BACKUP_SSH_CONFIG))
-            config = parser.lookup(self.device.hostname)
-
-            if 'port' in config:
-                ssh_port = int(config['port'])
-            else:
-                ssh_port = 22
-
-            if 'hostname' in config:
-                ssh_hostname = config['hostname']
-            else:
-                ssh_hostname = self.device.hostname
-
-        else:
-            ssh_port = self.device.device_type.connection_setting.ssh_port
-            ssh_hostname = self.device.hostname
+        ssh_hostname, ssh_port = self.device.get_ssh_connection_info()
 
         return self._remote_control_class(
             ssh_hostname,

@@ -10,5 +10,6 @@ urlpatterns = patterns('',
     url(r'^dashboard/run_task$',(views.DashboardRunView.as_view()), name='dashboard_run_task'),
     url(r'^version_info',(views.VersionInfoView.as_view()), name='version_info'),
     url(r'^api/device_status$', views.DeviceStatusAPIView.as_view()),
+    url(r'^api/password_change', views.PasswordChangeAPIView.as_view()),
     url(r'^api/redirect_to', views.RedirectView.as_view()),
 )
