@@ -81,11 +81,11 @@ class Command(BaseCommand):
             # imported.
 
             if RE_MATCH_SINGLE_WORD.match(task.class_name):
-                try:
-                    handler_obj = getattr(handlers, task.class_name)(device)
-                except AttributeError:
-                    raise TaskExecutionError('Handler class "%s" not found'
-                                             % task.class_name)
+                if not hasattr(handlers, task.class_name):
+                    raise TaskExecutionError(
+                        'Handler class "%s" not found' % task.class_name)
+
+                handler_obj = getattr(handlers, task.class_name)(device)
 
                 # Invoke the task handler methods (main part!)
 

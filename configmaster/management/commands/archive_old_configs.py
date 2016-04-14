@@ -11,6 +11,9 @@ from sh import git
 class Command(BaseCommand):
     def handle(self, *args, **options):
         for group in DeviceGroup.objects.all():
+            if group.repository is None:
+                continue
+
             repo_path, group_path = os.path.split(group.config_backup_path)
             archive_path = os.path.join(repo_path, "_Archive", group_path)
 
