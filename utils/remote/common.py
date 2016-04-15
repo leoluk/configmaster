@@ -18,6 +18,12 @@ from utils.contrib import scp, pexpect
 
 DEBUG_USER = "lschabel"
 
+FORTINET_KEX_ORDER = (
+    'diffie-hellman-group-exchange-sha1',
+    'diffie-hellman-group1-sha1',
+    'diffie-hellman-group14-sha1',
+    'diffie-hellman-group-exchange-sha256'
+)
 
 def sanitize(value):
     return list2cmdline([value])
@@ -232,6 +238,12 @@ class GuessingFirewallRemoteControl(NetworkDeviceRemoteControl):
         elif "#" in prompt:
             # if it's not a Juniper, simply assume it's a Fortigate firewall
             return "Fortigate"
+
+    def _make_transport(self):
+        # override default cipher order to work around Fortigate bug, T206
+        transport = super(GuessingFirewallRemoteControl, self)._make_transport()
+        transport._preferred_kex = FORTINET_KEX_ORDER
+        return transport
 
 
 if __name__ == '__main__':
