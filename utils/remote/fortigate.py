@@ -157,8 +157,16 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
     def get_raw_time(self):
         return self.read_sysinfo()['date']
 
+    def _make_transport(self):
+        # override default cipher order to work around Fortigate bug, T206
+        transport = super(FortigateRemoteControl, self)._make_transport()
+        transport._preferred_kex = common.FORTINET_KEX_ORDER
+        return transport
+
+
 if __name__ == '__main__':
     import getpass
-    rc = FortigateRemoteControl("c93f.continum.net", timeout=1)
+
+    rc = FortigateRemoteControl("fortigate.continum.net", timeout=1)
     rc.connect(common.DEBUG_USER, getpass.getpass())
     print repr(rc.get_time())
