@@ -1,3 +1,9 @@
+#!/usr/bin/env python2
+# -*- coding: utf8 -*-
+#
+#   Copyright (C) 2013-2016 Continum AG
+#
+
 from django.conf.urls import patterns, include, url
 
 from django.contrib import admin

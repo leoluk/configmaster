@@ -1,11 +1,16 @@
-import os
+#!/usr/bin/env python2
+# -*- coding: utf8 -*-
+#
+#   Copyright (C) 2013-2016 Continum AG
+#
 
+import os
 from django.core.management.base import BaseCommand
+from sh import git
+
 from configmaster.management.handlers.config_backup import \
     NetworkDeviceConfigBackupHandler
 from configmaster.models import Device, DeviceGroup
-
-from sh import git
 
 
 class Command(BaseCommand):
