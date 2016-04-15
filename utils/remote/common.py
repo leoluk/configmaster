@@ -1,3 +1,9 @@
+#!/usr/bin/env python2
+# -*- coding: utf8 -*-
+#
+#   Copyright (C) 2013-2016 Continum AG
+#
+
 from contextlib import contextmanager
 import socket
 from datetime import datetime
