@@ -4,6 +4,11 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
+"""
+This management command is called at the end of each run and moves config
+files for devices which are no longer in the database to a _Archive folder.
+"""
+
 import os
 from django.core.management.base import BaseCommand
 from sh import git

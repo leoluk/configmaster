@@ -41,7 +41,8 @@ class DashboardView(ListView):
 
 class VersionInfoView(ListView):
     template_name = 'configmaster/version_info.html'
-    queryset = DeviceGroup.objects.prefetch_related("device_set").prefetch_related("device_set__device_type")
+    queryset = (DeviceGroup.objects.prefetch_related("device_set")
+                .prefetch_related("device_set__device_type"))
 
 
 class DashboardRunView(View):
@@ -104,9 +105,12 @@ class DeviceStatusAPIView(View):
             url = request.build_absolute_uri(url)
 
             if device.group.is_security_sensitive:
-                status_text += '\n\n(security sensitive device, output omitted - see %s)' % url
+                status_text += (
+                    '\n\n(security sensitive device, output omitted - see %s)'
+                    % url)
             else:
-                status_text += ('\n\nReport: %s' % url)+'\n\n'+report.long_output
+                status_text += (
+                    ('\n\nReport: %s' % url)+'\n\n'+report.long_output)
 
         return HttpResponse(status_text, content_type='text/plain')
 

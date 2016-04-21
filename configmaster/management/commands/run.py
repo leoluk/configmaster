@@ -4,16 +4,18 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
+import traceback
+
 from django.conf import settings
+
 from django.core.management import BaseCommand
 import re
-import traceback
+
 from configmaster.management import handlers
 from configmaster.management.handlers.base import TaskExecutionError
-from configmaster.models import Device, Report, DeviceGroup, Task
+from configmaster.models import Device, Report, Task
 from configmaster.views import DashboardView
 from utils import locking
-
 
 RE_MATCH_SINGLE_WORD = re.compile(r'\A[\w-]+\Z')
 
@@ -74,7 +76,8 @@ class Command(BaseCommand):
             if group_members:
                 return group_members
             else:
-                self.stderr.write("Device/group %s does not exist, skipping" % argument)
+                self.stderr.write(
+                    "Device/group %s does not exist, skipping" % argument)
                 return []
 
     # noinspection PyBroadException
@@ -109,7 +112,8 @@ class Command(BaseCommand):
                 # in order to call it after the run is completed.
                 # This ensures that each handler is only called once.
 
-                self.call_after_completion[task.name] = handler_obj.run_completed
+                self.call_after_completion[
+                    task.name] = handler_obj.run_completed
 
                 result, output = _result
 
@@ -169,7 +173,8 @@ class Command(BaseCommand):
         try:
             run_lock.acquire(non_blocking=True)
         except IOError:
-            self.stderr.write("A run with the same arguments is already in progress")
+            self.stderr.write(
+                "A run with the same arguments is already in progress")
             return
 
         for label in args:
@@ -196,37 +201,42 @@ class Command(BaseCommand):
 
         for device in devices:
             if device.device_type is None:
-                self.stdout.write("Device %s has no device type, skipping..." % device.label)
+                self.stdout.write(
+                    "Device %s has no device type, skipping..." % device.label)
                 continue
             elif not device.is_enabled():
-                self.stdout.write("Device %s is disabled, skipping..." % device.label)
+                self.stdout.write(
+                    "Device %s is disabled, skipping..." % device.label)
                 continue
             else:
                 if not device.device_type.tasks.count():
                     self.stdout.write("No tasks for %s" % device.label)
                     continue
 
-
                 for task in device.device_type.tasks.all():
                     if not task.enabled:
-                        self.stdout.write('Device %s, task "%s" skipped (disabled)'
-                                          % (device.label, task.name))
+                        self.stdout.write(
+                            'Device %s, task "%s" skipped (disabled)'
+                            % (device.label, task.name))
                         continue
 
                     # Remove reports for tasks which are not assigned to the
                     #  device's device type (example: happens after a device
                     #  type change).
 
-                    for report in device.latest_reports.exclude(task__in=device.device_type.tasks.all()):
+                    for report in device.latest_reports.exclude(
+                            task__in=device.device_type.tasks.all()):
                         device.latest_reports.remove(report)
 
                     if tasks:
                         if not task in tasks:
-                            self.stdout.write('Device %s, task "%s" skipped (not included)'
-                                              % (device.label, task.name))
+                            self.stdout.write(
+                                'Device %s, task "%s" skipped (not included)'
+                                % (device.label, task.name))
                             continue
 
-                    self.stdout.write("Acquiring device lock for device %s..." % device.label)
+                    self.stdout.write(
+                        "Acquiring device lock for device %s..." % device.label)
                     device.lock.acquire()
                     self.stdout.write("Running tasks...")
 
@@ -235,9 +245,11 @@ class Command(BaseCommand):
                         report, result = self.run_task(device, task)
                         if ((result == Report.RESULT_FAILURE) and
                                 (retries < settings.CONFIGMASTER_RETRIES) and
-                                (not any(x in report.output for x in DO_NOT_RETRY))):
+                                (not any(x in report.output for x in
+                                         DO_NOT_RETRY))):
                             retries += 1
-                            self.stdout.write('Retrying... (%d/%d)' % (retries, settings.CONFIGMASTER_RETRIES))
+                            self.stdout.write('Retrying... (%d/%d)' % (
+                                retries, settings.CONFIGMASTER_RETRIES))
                         else:
                             break
 
@@ -247,7 +259,8 @@ class Command(BaseCommand):
         # Call run_complete methods of all invoked task handlers
 
         for task_name, func in self.call_after_completion.iteritems():
-            self.stdout.write('Calling run_complete for task "%s"...' % task_name)
+            self.stdout.write(
+                'Calling run_complete for task "%s"...' % task_name)
             func()
 
         run_lock.release()

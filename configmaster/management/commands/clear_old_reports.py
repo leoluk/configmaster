@@ -12,6 +12,8 @@ from configmaster.models import Report
 
 
 class Command(BaseCommand):
+    help = "Removes all reports older than 7 days."
+
     def handle(self, *args, **options):
         Report.objects.filter(
             date__lte=datetime.datetime.today() - datetime.timedelta(
