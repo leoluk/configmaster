@@ -13,6 +13,8 @@ from django.core.urlresolvers import reverse
 from django.http.response import HttpResponseBadRequest, \
     HttpResponse
 from django.shortcuts import render_to_response, redirect
+from django.utils.timezone import localtime
+
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, View
 
@@ -117,7 +119,7 @@ class DeviceStatusAPIView(View):
                 '\n\nNOTICE: This check is executed by ConfigMaster. '
                 'The last run was at %s.\nYou can manually trigger a run using'
                 ' the ConfigMaster web interface or command line.' % (
-                    report.date.strftime("%Y-%m-%d %H:%M:%S")
+                    localtime(report.date).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
 
