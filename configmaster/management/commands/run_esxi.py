@@ -86,7 +86,8 @@ class Command(BaseCommand):
                 stage1_ret = sh.aunpack('stage1.tgz')
             except sh.ErrorReturnCode:
                 self.stderr.write(
-                    "Config backup failed for %s: failed to unpack stage1" % name)
+                    "Config backup failed for %s: failed to unpack stage1"
+                    % name)
                 continue
 
             if not "\nstate.tgz" in stage1_ret.stdout or not os.path.exists(
@@ -101,24 +102,28 @@ class Command(BaseCommand):
                 stage2_ret = sh.aunpack('state.tgz')
             except sh.ErrorReturnCode:
                 self.stderr.write(
-                    "Config backup failed for %s: failed to unpack state.tgz" % name)
+                    "Config backup failed for %s: failed to unpack state.tgz"
+                    % name)
                 continue
 
             if not os.path.exists('local.tgz'):
                 self.stderr.write(
-                    "Config backup failed for %s: invalid state.tgz, local.tgz missing" % name)
+                    "Config backup failed for %s: invalid state.tgz, "
+                    "local.tgz missing" % name)
                 continue
 
             try:
                 stage3_ret = sh.aunpack('local.tgz')
             except sh.ErrorReturnCode:
                 self.stderr.write(
-                    "Config backup failed for %s: failed to unpack local.tgz" % name)
+                    "Config backup failed for %s: "
+                    "failed to unpack local.tgz" % name)
                 continue
 
             if not os.path.exists('etc'):
                 self.stderr.write(
-                    "Config backup failed for %s: invalid local.tgz, etc/ missing" % name)
+                    "Config backup failed for %s: "
+                    "invalid local.tgz, etc/ missing" % name)
                 continue
 
             for path in settings.ESXI_FILE_BLACKLIST:
@@ -139,7 +144,8 @@ class Command(BaseCommand):
             try:
                 sh.git.add('-u', '.')
                 sh.git.add('.')
-                if NetworkDeviceConfigBackupHandler._git_commit("ESXi config change (%s)" % name):
+                if NetworkDeviceConfigBackupHandler._git_commit(
+                                "ESXi config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
                 self.stderr.write(
@@ -156,7 +162,8 @@ class Command(BaseCommand):
             try:
                 sh.git.add('-u', '.')
                 sh.git.add('.')
-                if NetworkDeviceConfigBackupHandler._git_commit("ESXi raw config change (%s)" % name):
+                if NetworkDeviceConfigBackupHandler._git_commit(
+                                "ESXi raw config change (%s)" % name):
                     sh.git.push()
             except sh.ErrorReturnCode as e:
                 self.stderr.write(

@@ -9,6 +9,8 @@ from configmaster.models import Device
 
 
 class Command(BaseCommand):
+    help = "Unset all known_by_nagios flags"
+
     def handle(self, *args, **options):
         for device in Device.objects.all():
             if device.known_by_nagios:

@@ -25,7 +25,10 @@ class Command(BaseCommand):
 
     # noinspection PyMethodMayBeStatic
     def add_arguments(self, parser):
-        parser.add_argument('filename', default="", help="Read from file instead of remote server")
+        parser.add_argument(
+            'filename',
+            default="",
+            help="Read from file instead of remote server")
 
     def fetch_pwsafe_data(self, url=settings.PWSAFE_EXPORT_URL):
         """
@@ -65,7 +68,8 @@ class Command(BaseCommand):
             try:
                 group = DeviceGroup.objects.get(name=data['device_group'])
             except DeviceGroup.DoesNotExist:
-                self.stderr.write("Group %s does not exist" % data['device_group'])
+                self.stderr.write(
+                    "Group %s does not exist" % data['device_group'])
                 continue
 
             try:
@@ -79,7 +83,8 @@ class Command(BaseCommand):
                         device.device_type = group.default_device_type
             else:
                 if data['out_of_service']:
-                    self.stdout.write("Device %s out of service, deleting..." % label)
+                    self.stdout.write(
+                        "Device %s out of service, deleting..." % label)
                     device.delete()
                     continue
 
@@ -98,9 +103,12 @@ class Command(BaseCommand):
                 if not len(data['tmp_device_type']):
                     device.device_type = None
                 else:
-                    device_type = DeviceType.objects.get_or_create(name=data['tmp_device_type'])[0]
+                    device_type = DeviceType.objects.get_or_create(
+                        name=data['tmp_device_type'])[0]
                     device.device_type = device_type
 
             device.save()
 
-        call_command("archive_old_configs", stdout=self.stdout, stderr=self.stderr)
+        call_command(
+            "archive_old_configs",
+            stdout=self.stdout, stderr=self.stderr)

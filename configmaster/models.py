@@ -36,7 +36,7 @@ def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
         user.is_staff = True
         user.is_superuser = True
         user.is_active = ([group in settings.LOGIN_ALLOWED_GROUPS for group in
-                    ldap_user.group_names])
+                           ldap_user.group_names])
 
         if name:
             words = name[0].split()
@@ -71,16 +71,17 @@ class Credential(models.Model):
 
     path = models.CharField(max_length=300, null=True, blank=True)
 
-
     def __unicode__(self):
         return self.description
 
 
 class ConnectionSetting(models.Model):
     name = models.CharField(max_length=100)
-    ssh_port = models.IntegerField(verbose_name="SSH port", null=True, blank=True)
-    use_ssh_config = models.BooleanField(verbose_name="Use ssh_config",
-                                         default=False)
+    ssh_port = models.IntegerField(
+        verbose_name="SSH port", null=True, blank=True)
+    use_ssh_config = models.BooleanField(
+        verbose_name="Use ssh_config",
+        default=False)
 
     def __unicode__(self):
         if self.ssh_port:
@@ -127,7 +128,8 @@ class DeviceGroup(models.Model):
         return os.path.join(
             self.repository.path,
             RE_MATCH_FIRST_WORD.findall(
-                self.plural.replace(' ', '').replace(settings.CONFIGMASTER_SECURE_GROUP_PLURAL, ''))[0])
+                self.plural.replace(' ', '').replace(
+                    settings.CONFIGMASTER_SECURE_GROUP_PLURAL, ''))[0])
 
     @property
     def is_security_sensitive(self):
@@ -141,17 +143,24 @@ class Task(models.Model):
     enabled = models.BooleanField(default=True)
     hide_if_successful = models.BooleanField(
         default=False,
-        help_text="Hide in frontend if the task was successful or the "
-                  "device is disabled.")
-    result_url = models.CharField(max_length=100, verbose_name="Result URL", null=True, blank=True,
-                                  help_text="A URL which points to the result of a task. Will be displayed in "
-                                            "the frontend if the task has been successfully run at least once. "
-                                            "<br/>The following placeholders are available: {label}, {hostname}, "
-                                            "{device_type}, {repo}, {group}, {group_plural} and {group_path_component}.")
+        help_text=(
+            "Hide in frontend if the task was successful or the "
+            "device is disabled."))
+    result_url = models.CharField(
+        max_length=100, verbose_name="Result URL",
+        null=True, blank=True,
+        help_text=(
+            "A URL which points to the result of a task. Will be displayed in "
+            "the frontend if the task has been successfully run at least once. "
+            "<br/>The following placeholders are available: {label}, "
+            "{hostname}, {device_type}, {repo}, {group}, {group_plural} and "
+            "{group_path_component}."))
 
-    master_task = models.ForeignKey("Task", blank=True, null=True,
-                                    help_text='If a master task is set, the Nagios output will be set to "Disabled"'
-                                              'if both tasks were unsuccessful.')
+    master_task = models.ForeignKey(
+        "Task", blank=True, null=True,
+        help_text=(
+            'If a master task is set, the Nagios output will be set to '
+            '"Disabled" if both tasks were unsuccessful.'))
 
     def __unicode__(self):
         return self.name
@@ -167,7 +176,8 @@ class Task(models.Model):
                 device_type=device.device_type,
                 group=device.group,
                 group_plural=device.group.plural.replace(' ', ''),
-                group_path_component=os.path.split(device.group.config_backup_path)[-1],
+                group_path_component=
+                os.path.split(device.group.config_backup_path)[-1],
                 repo=device.group.repository.name
             )
 
@@ -176,25 +186,38 @@ class DeviceType(models.Model):
     name = models.CharField(max_length=100)
     tasks = models.ManyToManyField(Task, null=True, blank=True)
 
-    connection_setting = models.ForeignKey(ConnectionSetting, null=True, blank=True)
-    credential = models.ForeignKey(Credential, help_text="Default credential for this device type", null=True,
-                                   blank=True)
+    connection_setting = models.ForeignKey(
+        ConnectionSetting, null=True, blank=True)
 
-    config_filter = models.TextField(help_text="List of regular expressions, one per line. "
-                                               "Content matched by one of the expressions will "
-                                               "be removed from config files before they are committed.<br/>"
-                                               "Dot does not match newlines, ^$ match the beginning "
-                                               "and end of each line.", blank=True)
+    credential = models.ForeignKey(
+        Credential,
+        help_text="Default credential for this device type",
+        null=True,
+        blank=True)
 
-    version_regex = models.CharField(max_length=120,
-                                     help_text="Regular expression which extracts version information. "
-                                               "The regex is applied to the first five config lines (line per line!).", blank=True)
+    config_filter = models.TextField(
+        help_text=(
+            "List of regular expressions, one per line. "
+            "Content matched by one of the expressions will "
+            "be removed from config files before they are committed.<br/>"
+            "Dot does not match newlines, ^$ match the beginning "
+            "and end of each line."),
+        blank=True)
+
+    version_regex = models.CharField(
+        max_length=120,
+        help_text=(
+            "Regular expression which extracts version information. "
+            "The regex is applied to the first five config lines "
+            "(line per line!)."),
+        blank=True)
 
     alternative_config_compare = models.BooleanField(
-        help_text='Compare configs using an interactive session (req. for Juniper SSG). '
-                  'If a version retrieval method is present, the version info will be '
-                  'read from the device.', default=False
-    )
+        help_text=(
+            'Compare configs using an interactive session (req. for Juniper SSG). '
+            'If a version retrieval method is present, the version info will be '
+            'read from the device.'),
+        default=False)
 
     def __init__(self, *args, **kwargs):
         super(DeviceType, self).__init__(*args, **kwargs)
@@ -210,7 +233,8 @@ class DeviceType(models.Model):
         """
         if not self._filter_expressions and len(self.config_filter):
             for regex in self.config_filter.splitlines():
-                self._filter_expressions.append(re.compile(regex, flags=re.MULTILINE))
+                self._filter_expressions.append(
+                    re.compile(regex, flags=re.MULTILINE))
 
         return self._filter_expressions
 
@@ -225,7 +249,6 @@ class DeviceType(models.Model):
 
 
 class Device(locking.LockMixin, models.Model):
-
     STATUS_DISABLED = 1
     STATUS_SUCCESS = 2
     STATUS_NO_REPORT = 3
@@ -243,16 +266,21 @@ class Device(locking.LockMixin, models.Model):
     hostname = models.CharField("Host name", max_length=200, blank=True)
 
     enabled = models.BooleanField("Config management enabled", default=True)
-    sync = models.BooleanField("Synchronized with PWSafe", default=True, help_text="Disabling this flag does not "
-                                                                                   "disable the synchronization for this "
-                                                                                   "device. Certain fields cannot be "
-                                                                                   "edited if this flag is set.")
+    sync = models.BooleanField(
+        "Synchronized with PWSafe", default=True,
+        help_text="Disabling this flag does not "
+                  "disable the synchronization for this "
+                  "device. Certain fields cannot be "
+                  "edited if this flag is set.")
 
-    do_not_use_scp = models.BooleanField(help_text='Use an interactive SSH session instead of SCP. '
-                                                   'For Fortigate devices, this is a "feature of '
-                                                   'last resort" (incomplete config).',
-                                         verbose_name="Do not use SCP", default=False)
-    credential = models.ForeignKey(Credential, help_text="Overrides group default.", null=True, blank=True)
+    do_not_use_scp = models.BooleanField(
+        help_text='Use an interactive SSH session instead of SCP. '
+                  'For Fortigate devices, this is a "feature of '
+                  'last resort" (incomplete config).',
+        verbose_name="Do not use SCP", default=False)
+    credential = models.ForeignKey(Credential,
+                                   help_text="Overrides group default.",
+                                   null=True, blank=True)
 
     group = models.ForeignKey(DeviceGroup, null=True, blank=True)
     device_type = models.ForeignKey(DeviceType, null=True, blank=True)
@@ -261,10 +289,12 @@ class Device(locking.LockMixin, models.Model):
     # is needed because CM runs are non- interactive by default, so we need
     # another way to approve host key changes.
 
-    accept_new_hostkey = models.BooleanField(verbose_name="Accept new host key", default=False,
-                                         help_text="Set this flag to accept a changed host key.")
+    accept_new_hostkey = models.BooleanField(
+        verbose_name="Accept new host key once", default=False,
+        help_text="Set this flag to accept a changed host key. ")
 
-    latest_reports = models.ManyToManyField("Report", editable=False, related_name="latest_device")
+    latest_reports = models.ManyToManyField("Report", editable=False,
+                                            related_name="latest_device")
     version_info = models.TextField("Version info", blank=True)
 
     known_by_nagios = models.BooleanField(
