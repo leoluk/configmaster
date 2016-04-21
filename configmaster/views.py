@@ -112,6 +112,15 @@ class DeviceStatusAPIView(View):
                 status_text += (
                     ('\n\nReport: %s' % url)+'\n\n'+report.long_output)
 
+        if report:
+            status_text += (
+                '\n\nNOTICE: This check is executed by ConfigMaster. '
+                'The last run was at %s. You can manually trigger a run using '
+                'the ConfigMaster web interface or command line.' % (
+                    report.date.strftime("%Y-%m-%d %H:%M:%S")
+                )
+            )
+
         return HttpResponse(status_text, content_type='text/plain')
 
 
