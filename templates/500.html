@@ -1,0 +1,52 @@
+{# Copyright (C) 2013-2016 Continum AG #}
+
+{% extends 'base.html' %}
+
+{% load staticfiles %}
+{% load i18n %}
+
+{% block extra_header %}
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block title %}Server error{% endblock %}
+{% block app_name %}PasswordSafe{% endblock %}
+
+{% block base_content %}
+
+    <!-- Static navbar -->
+    <div class="navbar navbar-default">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li>
+                    <span><a href="/"><img src="{% static 'media/c_logo.gif' %}" class="logo"></a></span>
+                </li>
+            </ul>
+        </div>
+        <!--/.nav-collapse -->
+    </div>
+
+
+    <div class="page-header">
+        <div class="text-left">
+            <h1>{% trans "Server error" %}</h1>
+            <strong>{% trans "A server error has occured or a security violation has been detected." %}</strong>
+        </div>
+
+    </div>
+
+    {% block content %}
+        {% blocktrans %}
+            The admins have been notified. If this error is triggered by a specific action or event, please send an
+            contact the developers and describe the steps which are necessary to reproduce the problem. Thanks!
+        {% endblocktrans %}
+    {% endblock %}
+
+{% endblock %}
