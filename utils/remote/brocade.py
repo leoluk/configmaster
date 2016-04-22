@@ -32,7 +32,7 @@ class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
         # TODO: does not work in 100% of all cases yet, probably because
         # the prompt is not separated by a newline and confuses pexpect (?)
         # same issue for other devices
-        self.interact.expect(r'.*>')
+        self.interact.expect(r'.*[>#]')
 
     def run_command(self, command):
         # TODO: workaround for expect_prompt malfunction
