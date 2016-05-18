@@ -220,16 +220,17 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
             repository.lock.acquire()
 
         for device in Device.objects.all():
-            symlink_dir = os.path.join(
-                device.group.repository.path, "_ByHostname")
-            if not os.path.exists(symlink_dir):
-                os.mkdir(symlink_dir)
-            symlink = os.path.join(symlink_dir, '{}.txt'.format(
-                device.hostname))
-            if not os.path.islink(symlink) and os.path.exists(
-                    device.config_backup_filename):
-                os.symlink(os.path.relpath(
-                    device.config_backup_filename, symlink_dir), symlink)
+            if device.group.repository:
+                symlink_dir = os.path.join(
+                    device.group.repository.path, "_ByHostname")
+                if not os.path.exists(symlink_dir):
+                    os.mkdir(symlink_dir)
+                symlink = os.path.join(symlink_dir, '{}.txt'.format(
+                    device.hostname))
+                if not os.path.islink(symlink) and os.path.exists(
+                        device.config_backup_filename):
+                    os.symlink(os.path.relpath(
+                        device.config_backup_filename, symlink_dir), symlink)
 
         # Git push and config filter commits
 
@@ -247,8 +248,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 git.push()
 
         for device_group in DeviceGroup.objects.all():
-            os.chdir(device_group.repository.path)
-            git.push()
+            if device_group.repository:
+                os.chdir(device_group.repository.path)
+                git.push()
 
         os.chdir(Repository.objects.get(id=1).path)
 
