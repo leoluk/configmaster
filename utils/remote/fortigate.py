@@ -15,6 +15,7 @@ __author__ = 'lschabel'
 RE_SYSINFO = re.compile(r""".*^.*?Version:\s+(?P<model>.+?)\s(?P<swrev>.+?)$.*
 ^Serial-Number:\s+(?P<serial>FG.+?)$.*^System time:\s+(?P<date>.+?)$""", re.DOTALL | re.MULTILINE)
 
+RE_CONFIG_CHECKSUM = re.compile(r'checksum\n.+all: ([^\n]+)$', re.DOTALL | re.MULTILINE)
 
 class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
     def __init__(self, *args, **kwargs):
@@ -123,6 +124,14 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
 
         if match:
             return match.groupdict()
+
+    def get_config_checksum(self):
+        output = self.run_command('diagnose sys ha checksum show')
+
+        try:
+            return RE_CONFIG_CHECKSUM.findall(output)[0].strip()
+        except IndexError:
+            raise common.OperationalError("Failed to get checksum")
 
     @contextmanager
     def ctx_config_block(self, path):
