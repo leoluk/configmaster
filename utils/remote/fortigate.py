@@ -125,13 +125,19 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
         if match:
             return match.groupdict()
 
-    def get_config_checksum(self):
-        output = self.run_command('diagnose sys ha checksum show')
+    def _get_config_checksum(self, command):
+        output = self.run_command(command)
 
         try:
             return RE_CONFIG_CHECKSUM.findall(output)[0].strip()
         except IndexError:
             raise common.OperationalError("Failed to get checksum")
+
+    def get_config_checksum(self):
+        try:
+            return self._get_config_checksum('diagnose sys ha checksum show')
+        except common.OperationalError:
+            return self._get_config_checksum('diagnose sys ha showcsum')
 
     @contextmanager
     def ctx_config_block(self, path):
