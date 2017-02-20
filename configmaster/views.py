@@ -69,6 +69,22 @@ class DashboardRunView(View):
         })
 
 
+class DeviceGetVersionAPIView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            device = Device.objects.get(label=request.REQUEST['device'])
+        except Device.DoesNotExist:
+            return HttpResponseBadRequest("No such device")
+        except KeyError:
+            return HttpResponseBadRequest("Missing parameter")
+
+        return HttpResponse(json.dumps({
+            'label': device.label,
+            'hostname': device.hostname,
+            'version': device.version_info}),
+        content_type='application/json')
+
+
 class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):
         try:

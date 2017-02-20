@@ -105,7 +105,6 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         """
 
         checksum = self._get_config_checksum()
-        print(checksum)
 
         if checksum != self.device.last_checksum:
             self.device.last_checksum = checksum
