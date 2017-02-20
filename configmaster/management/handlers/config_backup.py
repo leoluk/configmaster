@@ -81,6 +81,39 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         return changes
 
+    def _get_config_checksum(self):
+        """Read the config checksum from the device. Only supported on
+        certain devices (raises NotImplementedError otherwise)."""
+
+        # Open a separate connection to the device, bypassing the parent's
+        # connection initializer. This means that we have to handle the
+        # entire connection life cycle manually!
+
+        connection = self._get_fw_remote_control()
+        """:type : NetworkDeviceRemoteControl"""
+
+        try:
+            connection.connect(self.credential.username, self.credential.password)
+            return connection.get_config_checksum()
+        finally:
+            connection.close()
+
+    def _compare_config_checksum(self):
+        """
+        Returns True if the config checksum is identical. Updates the
+        Device.last_checksum field if necessary.
+        """
+
+        checksum = self._get_config_checksum()
+        print(checksum)
+
+        if checksum != self.device.last_checksum:
+            self.device.last_checksum = checksum
+            self.device.save(update_fields=['last_checksum'])
+            return False
+        else:
+            return True
+
     def _read_config_from_device(self, temp_filename, startup_config=False,
                                  use_scp=True):
         if not self.device.do_not_use_scp and use_scp:
@@ -156,6 +189,10 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 f.write(raw_config)
 
     def run(self, *args, **kwargs):
+        if self.device.device_type.checksum_config_compare:
+            if self._compare_config_checksum():
+                return self._return_success(
+                    "Config backup successful (skipped, checksum identical)")
 
         filename, temp_dir, temp_filename = self._initialize_temporary_directory()
         self._read_config_from_device(temp_filename)

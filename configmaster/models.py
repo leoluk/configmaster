@@ -219,6 +219,12 @@ class DeviceType(models.Model):
             'read from the device.'),
         default=False)
 
+    checksum_config_compare = models.BooleanField(
+        help_text=(
+            'Compare configs by interactively querying and comparing a config checksum. '
+            'Only supported by FortiGate remote hosts.'),
+        default=False)
+
     def __init__(self, *args, **kwargs):
         super(DeviceType, self).__init__(*args, **kwargs)
         self._filter_expressions = []
@@ -296,6 +302,8 @@ class Device(locking.LockMixin, models.Model):
     latest_reports = models.ManyToManyField("Report", editable=False,
                                             related_name="latest_device")
     version_info = models.TextField("Version info", blank=True)
+
+    last_checksum = models.TextField("Last checksum", blank=True)
 
     known_by_nagios = models.BooleanField(
         help_text="This flag will be set whenever the device status is "

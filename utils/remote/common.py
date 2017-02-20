@@ -212,6 +212,9 @@ class NetworkDeviceRemoteControl(SSHRemoteControl):
     def get_time(self):
         return datetime.strptime(self.get_raw_time(), self._date_format)
 
+    def get_config_checksum(self):
+        raise NotImplementedError
+
     def run_command(self, command):
         self.interact.send(command)
         self.expect_prompt()
