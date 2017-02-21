@@ -159,6 +159,7 @@ ESXI_FILE_BLACKLIST = (
     'etc/vmware/.backup.counter',
     'etc/ntp.drift',
     'etc/vmware/dvsdata.db',
+    'etc/vmware/lunTimestamps.log',
 )
 
 from local_settings import *
