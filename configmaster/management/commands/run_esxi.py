@@ -138,6 +138,12 @@ class Command(BaseCommand):
             sh.sh('-c', '/usr/bin/find -type d -exec chmod 750 {} \;'.split())
             sh.sh('-c', '/usr/bin/find -type d -exec chmod 640 {} \;'.split())
 
+            for root, dirs, files in os.walk(repo_dir):
+                for d in dirs:
+                    os.chmod(os.path.join(root,d), 0o750)
+                for f in files:
+                    os.chmod(os.path.join(root,f), 0o640)
+
             sh.cp('-r', '.', repo_dir+'/')
             os.chdir(repo_dir)
 

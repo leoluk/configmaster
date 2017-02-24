@@ -17,8 +17,6 @@ class Command(BaseCommand):
     This management command imports basic device data (group, label,
     description, hostname) from PWSafe, which in turn imports it from
     AssetDB.
-    
-    
     """
 
     help = "Import data from PasswordSafe"
