@@ -19,6 +19,7 @@ originally posted by Hangya.
 
 from django import template
 from django.conf import settings
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -56,7 +57,7 @@ def bgicon(icon_name, *args, **kwargs):
     classes = ' ' + kwargs['classes'] if 'classes' in kwargs else ''
     styles = ';' + kwargs['styles'] if 'styles' in kwargs else ''
 
-    return (
+    return mark_safe(
         'class="bgicon' + classes +
         '" style="background-image:url(' +
         settings.STATIC_URL + 'icons/' + icon_name + '.png)' +
@@ -76,7 +77,7 @@ def listicon(icon_name, *args, **kwargs):
     classes = ' ' + kwargs['classes'] if 'classes' in kwargs else ''
     styles = ';' + kwargs['styles'] if 'styles' in kwargs else ''
 
-    return (
+    return mark_safe(
         'class="listicon' + classes +
         '" style="list-style-image:url(' +
         settings.STATIC_URL + 'icons/' + icon_name + '.png)' +
