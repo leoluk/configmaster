@@ -205,7 +205,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         try:
             if os.path.exists(filename):
                 os.unlink(filename)
-            os.rename(temp_filename, filename)
+            shutil.move(temp_filename, filename)
         finally:
             shutil.rmtree(temp_dir)
 
