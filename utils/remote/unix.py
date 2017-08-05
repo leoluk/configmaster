@@ -40,8 +40,11 @@ class UnixRemoteControl(common.NetworkDeviceRemoteControl):
 
 
 if __name__ == '__main__':
-    rc = UnixRemoteControl("unix.continum.net", timeout=5)
-    rc.connect("root", "foobar")
-    # rc.connect("root", getpass.getpass())
+    hostname, credentials = common.interactive_debug_query()
 
-    print repr(rc.change_admin_password('foobar'))
+    rc = UnixRemoteControl(hostname, timeout=5)
+    rc.connect(*credentials)
+
+    new_password = raw_input('New password: ')
+
+    print repr(rc.change_admin_password(new_password))

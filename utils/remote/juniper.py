@@ -6,8 +6,6 @@
 
 from utils.remote.common import OperationalError
 
-__author__ = 'lschabel'
-
 import re
 
 import common
@@ -137,8 +135,9 @@ class JuniperRemoteControl(common.NetworkDeviceRemoteControl):
         return ' '.join(output.split('\n')[0].split()[1:3])[:-1]
 
 if __name__ == '__main__':
-    import getpass
+    hostname, credentials = common.interactive_debug_query()
 
-    rc = JuniperRemoteControl("juniper.continum.net", timeout=1)
-    rc.connect(common.DEBUG_USER, getpass.getpass())
+    rc = JuniperRemoteControl(hostname, timeout=1)
+    rc.connect(*credentials)
+
     print rc.get_time()

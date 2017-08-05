@@ -10,8 +10,6 @@ import re
 
 import common
 
-__author__ = 'lschabel'
-
 RE_SYSINFO = re.compile(r""".*^.*?Version:\s+(?P<model>.+?)\s(?P<swrev>.+?)$.*
 ^Serial-Number:\s+(?P<serial>FG.+?)$.*^System time:\s+(?P<date>.+?)$""", re.DOTALL | re.MULTILINE)
 
@@ -180,8 +178,9 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
 
 
 if __name__ == '__main__':
-    import getpass
+    hostname, credentials = common.interactive_debug_query()
 
-    rc = FortigateRemoteControl("fortigate.continum.net", timeout=1)
-    rc.connect(common.DEBUG_USER, getpass.getpass())
+    rc = FortigateRemoteControl(hostname, timeout=1)
+    rc.connect(*credentials)
+
     print repr(rc.get_time())

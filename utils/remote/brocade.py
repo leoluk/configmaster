@@ -45,9 +45,9 @@ class BrocadeRemoteControl(common.NetworkDeviceRemoteControl):
                 .replace('Daylight Time, ', ''))
 
 if __name__ == '__main__':
-    import getpass
+    hostname, credentials = common.interactive_debug_query()
 
-    rc = BrocadeRemoteControl("brocade.continum.net", timeout=5)
-    rc.connect(common.DEBUG_USER, getpass.getpass())
+    rc = BrocadeRemoteControl(hostname, timeout=5)
+    rc.connect(*credentials)
 
     print repr(rc.get_time())
