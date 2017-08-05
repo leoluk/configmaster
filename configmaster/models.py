@@ -193,7 +193,7 @@ class Task(models.Model):
 
 class DeviceType(models.Model):
     name = models.CharField(max_length=100)
-    tasks = models.ManyToManyField(Task, null=True, blank=True)
+    tasks = models.ManyToManyField(Task, blank=True)
 
     connection_setting = models.ForeignKey(
         ConnectionSetting, null=True, blank=True)
@@ -277,7 +277,7 @@ class Device(locking.LockMixin, models.Model):
     )
 
     name = models.CharField("Device name", max_length=100, blank=True)
-    label = models.CharField("Service label", max_length=4, unique=True)
+    label = models.CharField("Device identifier", max_length=200, unique=True)
     hostname = models.CharField("Host name", max_length=200, blank=True)
 
     enabled = models.BooleanField("Config management enabled", default=True)
