@@ -43,8 +43,6 @@ def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
             user.first_name = ' '.join(words[:-1])
             user.last_name = words[-1]
 
-        if not str(user.email):
-            user.email = uid + '@continum.net'
     except:
         logger.exception("LDAP update failed")
         return True
