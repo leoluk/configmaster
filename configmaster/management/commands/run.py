@@ -95,6 +95,15 @@ class Command(BaseCommand):
         super(Command, self).__init__()
         self.call_after_completion = {}
 
+    # noinspection PyMethodMayBeStatic
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'args',
+            nargs='*',
+            default=[],
+            help="List of arguments (see docs)",
+        )
+
     def _resolve_arg(self, argument):
         try:
             return [Device.objects.get(label=argument)]

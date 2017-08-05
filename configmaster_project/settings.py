@@ -23,8 +23,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Directories
 
-TEMPLATE_DIRS = (os.path.join(BASE_DIR, "templates"))
-
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
@@ -41,8 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'configmaster',
-    'south',
-    'icons_famfamfam',
+    'utils.contrib.icons_famfamfam',
     # 'debug_toolbar',
 )
 
@@ -81,18 +78,31 @@ AUTHENTICATION_BACKENDS = (
 
 LOGIN_ALLOWED_GROUPS = ("ldapGroup",)
 
-from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
-
-TEMPLATE_CONTEXT_PROCESSORS += (
-    'django.core.context_processors.request',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.debug'
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(BASE_DIR, "templates")
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.template.context_processors.request',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 ROOT_URLCONF = 'configmaster_project.urls'
 
 WSGI_APPLICATION = 'configmaster_project.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -116,7 +126,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -162,4 +171,5 @@ ESXI_FILE_BLACKLIST = (
     'etc/vmware/lunTimestamps.log',
 )
 
+# noinspection PyUnresolvedReferences
 from local_settings import *
