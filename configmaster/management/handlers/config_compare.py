@@ -61,7 +61,7 @@ class NetworkDeviceCompareWithStartupHandler(
         self.connection.terminal_setup = True
         sysinfo = self.connection.read_sysinfo()
         self.device.version_info = "{model} - {swrev}".format(**sysinfo)
-        self.device.save()
+        self.device.save(update_fields=['version_info'])
 
         running_config = self.connection.read_config(startup_config=False)
         startup_config = self.connection.read_config(startup_config=True)

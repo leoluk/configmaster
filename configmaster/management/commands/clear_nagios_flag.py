@@ -25,7 +25,7 @@ class Command(BaseCommand):
     help = "Unset all known_by_nagios flags"
 
     def handle(self, *args, **options):
-        for device in Device.objects.all():
+        for device in Device.objects.only('known_by_nagios'):
             if device.known_by_nagios:
                 device.known_by_nagios = False
                 device.save()
