@@ -37,8 +37,9 @@
                         <td>{% if "Error" in device.version_info %}{% icon 'cancel' %} {% endif %}{{ device.version_info }}</td>
                         <td style="text-align: right;">
                             <div class="actions">
-                                <a class="action" data-toggle="tooltip" title="AssetDB lookup"
-                                   href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}</a>
+                                <a class="action" data-toggle="tooltip" title="CMDB lookup"
+                                   href="{{ device.cmdb_redirect_url }}"
+                                   target="_blank">{% icon "database_go" %}</a>
                             </div>
                         </td>
                     </tr>

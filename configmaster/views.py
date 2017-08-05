@@ -7,6 +7,7 @@
 import json
 import traceback
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
 
 from django.core.management import call_command
 from django.core.urlresolvers import reverse
@@ -214,6 +215,9 @@ class PasswordChangeAPIView(View):
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
+        if not settings.CONFIGMASTER_PW_CHANGE_API_KEY:
+            raise SuspiciousOperation("Disabled PW change endpoint accessed")
+
         return super(PasswordChangeAPIView, self).dispatch(
             request, *args, **kwargs)
 
