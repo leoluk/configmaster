@@ -26,10 +26,10 @@
 
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><span><a href="/"><img src="{% static 'media/c_logo.gif' %}" class="logo"></a></span></li>
-
-                <li {% if request.path == url_dashboard %} class="active"{% endif %}><a
-                        href="{{ url_dashboard }}">{% trans "Dashboard" %}</a></li>
+                <li {% if request.path == url_dashboard %} class="active" {% endif %}>
+                    <a href="{{ url_dashboard }}">
+                        <span class="glyphicon glyphicon-home"></span>&nbsp;&nbsp;{% trans "Dashboard" %}
+                    </a></li>
                 <li {% if request.path == url_versions %} class="active"{% endif %}><a
                         href="{{ url_versions }}">{% trans "Firmware versions" %}</a></li>
             </ul>
