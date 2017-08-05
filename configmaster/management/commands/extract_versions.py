@@ -9,6 +9,15 @@ from configmaster.models import Device
 
 
 class Command(BaseCommand):
+    """
+    Manually set the device version field for all devices.
+
+    This command is only useful for debugging or after changing the
+    extraction regexp. The version info is automatically set whenever a
+    config backup task runs.
+
+    """
+
     def handle(self, *args, **options):
         for device in Device.objects.all():
             if not device.device_type:

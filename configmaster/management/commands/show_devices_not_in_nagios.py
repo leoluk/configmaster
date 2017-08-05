@@ -9,6 +9,15 @@ from configmaster.models import Device
 
 
 class Command(BaseCommand):
+    """
+    Outputs a list of devices which have reports (which indicates that their
+    FQDNs resolve and the device probably exists), but aren't monitored by
+    Nagios.
+
+    See Also:
+        :mod:`configmaster.management.commands.clear_nagios_flag`
+
+    """
     def handle(self, *args, **options):
         for device in Device.objects.order_by('group__name'):
             if (device.latest_reports.count() and not device.known_by_nagios

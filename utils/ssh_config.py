@@ -7,8 +7,6 @@
 from django.conf import settings
 import paramiko
 
-__author__ = 'lschabel'
-
 
 def lookup_host_in_ssh_config(hostname):
     parser = paramiko.SSHConfig()

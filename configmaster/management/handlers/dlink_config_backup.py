@@ -21,6 +21,10 @@ from configmaster.models import Repository, DeviceGroup
 
 
 def recvall(sock):
+    """
+    Read all data from a socket till EOF.
+    """
+
     data = b''
     while True:
         packet = sock.recv(1024)
@@ -36,6 +40,31 @@ LOGIN_REQ = b'POST / HTTP/1.0\r\nContent-Length: %d\r\n' \
 
 class DLinkConfigBackupHandler(BaseHandler):
     def __init__(self, device):
+        """
+        A horrible abomination. An attempt was made to download and store the
+        D-Link DGS switch configs. Unfortunately, the only way to get at the
+        config is the device's horribly broken web interface.
+
+        Unfortunately, the device does not properly implement the HTTP/1.0
+        standard and sometimes (but not always) omits the HTTP status code.
+        This breaks any HTTP library, so this module contains a bare-bones
+        low-level HTTP client which is able to handle this device's sad excuse
+        of a HTTP implementation (yes, I'm bitter...).
+
+        Did I mention that the config is an opaque encrypted binary blob?
+
+        If this wasn't bad enough, it turned out that the DGS switch would
+        crash after a dozen or so backups and it was all for nothing.
+
+        Warnings:
+            This handler works fine - as in, backups the config,
+            but reliably crashes the target device.
+            It can be used to do manual backups (it's just as dangerous as
+            doing it through the web UI), but shouldn't run automatically
+            unless you appreciate random reboots :-)
+
+        """
+
         super(DLinkConfigBackupHandler, self).__init__(device)
         self.credential = self.device.get_credential()
 
@@ -85,7 +114,7 @@ class DLinkConfigBackupHandler(BaseHandler):
 
         self.device.group.repository.lock.acquire()
 
-        # TODO: config backup task mixin (T173)
+        # TODO: config backup task mixin (T173), remove duplicated code
 
         filename = self.device.config_backup_filename.replace('.txt', '.bin')
 

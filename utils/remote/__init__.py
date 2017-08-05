@@ -4,4 +4,8 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
-__author__ = 'lschabel'
+"""
+.. todo::
+    Document remote control classes.
+
+"""

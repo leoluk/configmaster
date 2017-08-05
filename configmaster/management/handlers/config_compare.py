@@ -18,8 +18,23 @@ RE_IGNORE_CONSOLE = re.compile(r"set console page \d+\s")
 
 class NetworkDeviceCompareWithStartupHandler(
     NetworkDeviceConfigBackupHandler):
+    def __init__(self, device):
+        """
+        Similar to the config backup handler, but does not store the config
+        but compares the startup and running config.
+        """
+        super(NetworkDeviceCompareWithStartupHandler, self).__init__(device)
 
     def _compare_config(self, startup_config, running_config):
+        """
+        Compare the two strings and either returns the success state or raises
+        an exception.
+
+        Args:
+            startup_config (str): Device's startup config
+            running_config (str): Device's running config
+
+        """
         if startup_config == running_config:
             return self._return_success("Running config equals startup config")
         else:
@@ -29,6 +44,17 @@ class NetworkDeviceCompareWithStartupHandler(
                                                running_config.splitlines())))
 
     def alternative_config_compare(self):
+        """
+        Juniper SSG-specific config comparison hack (SSG's return *different*
+        sets of config for SCP and console, so we cannot re-use the previously
+        downloaded config and request it interactively instead).
+
+        Is invoked if
+        :attr:`configmaster.models.DeviceType.alternative_config_compare`
+        is set.
+
+        """
+
         self.connection.open_console_channel()
         self.connection.expect_prompt()
         self.connection.setup_terminal()
@@ -50,14 +76,13 @@ class NetworkDeviceCompareWithStartupHandler(
 
         return self._compare_config(startup_config, running_config)
 
-
     def run(self, *args, **kwargs):
         if self.device.device_type.alternative_config_compare:
             return self.alternative_config_compare()
 
         filename, temp_dir, temp_filename = self._initialize_temporary_directory()
         self._read_config_from_device(temp_filename, startup_config=True)
-        self._cleanup_config(temp_filename)
+        self._cleanup_and_convert_config(temp_filename)
 
         try:
             if not os.path.exists(filename):

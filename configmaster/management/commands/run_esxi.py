@@ -27,13 +27,35 @@ class Command(BaseCommand):
     the exported config files from a web server. The actual config file export
     is not handled by ConfigMaster, only the versioning and alerting part.
 
+    You need a Windows host with the vSphere CLI tools which exports the
+    ESXi configuration and makes it available for download by ConfigMaster.
+
+    ConfigMaster then unpacks the Matroschka-like config backups and commits
+    the separate files to a Git repository. This allows you to track changes
+    to an ESXi server config over time.
+
+    Since the unpacking process is destructive and the result is unsuitable
+    for restore, the raw file is committed to a separate repository.
+
     This command is designed to be invoked by a cronjob, just as the regular
     run command (make sure to keep the config file export task in sync!).
 
-    It is NOT integrated with the ConfigMaster task runner or database since
+    It is NOT integrated with the ConfigMaster task runner since
     it works very differently from network device config backups. All hosts
-    are hardcoded in the config file for now since we don't want to  import
-    ESXi servers into the database for now.
+    are hardcoded in the config file.
+
+    Warning:
+        This is a proof-of-concept feature which is functional, but not
+        fully developed or documented.
+
+        Notably, it is not integrated with the repository mechanism and only
+        supports a single repository for now.
+
+        Also, please note that this only includes the system configuration,
+        NOT the individual virtual machine configs since those aren't part
+        of the ESXi system configuration (they are stored as individual
+        files in the datastore).
+
     """
 
     help = "ESXi backup run"
