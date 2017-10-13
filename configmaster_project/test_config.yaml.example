@@ -1,0 +1,20 @@
+repository:
+    path: path/to/repo
+
+credentials:
+    username: user
+    password: pass
+
+fortigates:
+    - hostname: host1
+      version:  version string
+    - hostname: host2
+      version:  version string
+
+junipers:
+    - hostname: host
+      version:  version
+
+procurves:
+    - hostname: host
+      version:  version
