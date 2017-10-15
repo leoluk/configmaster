@@ -27,31 +27,58 @@ DO_NOT_RETRY = (
 
 class Command(BaseCommand):
     """
+    .. _run-command-docs:
+
     This management command contains the runner, which iterates over all
     devices in the database and executed any tasks which have been defined
-    for them. It is designed to be called from a
+    for them. It is usually invoked by a cronjob.
+
+    ConfigMaster does not contain a scheduler and relies on an external
+    service (like cron or a systemd timer unit) to invoke the runner.
 
     The runner instantiates a handler class for each task, which is defined
     in the database and imported from the management.handlers module. Each
-    class should define two interfaces: run_complete(), run_wrapper() and
-    run(). The wrapper is called as a context manager and wraps the run()
-    invocation and performs setup- and clean-up-tasks (opening connections,
-    removing temporary files...). run() is called with no arguments,
-    and should execute the task itself. It should return a (exit_status,
-    output) tuple. The exit status should be either Report.RESULT_SUCCESS or
-    Report.RESULT_FAILURE. The run_complete method is called *once per task*
-    at the end of each run.
+    class should define three interfaces: ``run_complete()``, ``run_wrapper()``
+    and ``run()``. The wrapper is called as a context manager and wraps
+    the ``run()`` invocation and performs setup- and clean-up-tasks (opening
+    connections, removing temporary files...). ``run()`` is called with no
+    arguments, and should execute the task itself. It should return a
+    ``(exit_status, output)`` tuple. The exit status should be either
+    :attr:`configmaster.models.Report.RESULT_SUCCESS` or
+    :attr:`configmaster.models.Report.RESULT_FAILURE`. The ``run_complete()``
+    method is called *once per task* at the end of each run.
 
-    Instead of retuning Report.RESULT_FAILURE, a task handler may raise a
-    TaskExecutionError exception.
+    Instead of retuning :attr:`configmaster.models.Report.RESULT_FAILURE`,
+    a task handler may raise a TaskExecutionError exception.
 
     The command line output of this command is just for debugging purposes
     (except for the run_completed handler), as all task output is logged to
-    the database (as reports).
+    the database as :class:`configmaster.models.Report` objects.
 
     Exceptions raised during normal operation should be caught within the
-    task handler (connection timeouts...). Unexpected runtime errors will be
+    task handler (like connection timeouts). Unexpected runtime errors will be
     caught by the task runner and logged with full details (i.e. traceback).
+
+    Examples:
+
+        ::
+
+            # Run all tasks for a single device
+            ./manage.py run C123
+
+            # Run for all devices, except routers
+            ./manage.py run "%Router"
+
+            # Run only for routers and switches
+            ./manage.py run Router Switch
+
+            # Run only for routers, and only run the task with ID 3
+            ./manage.py run Router T-3
+
+    Note:
+
+        The "%" exclusion syntax regrettably collides with *both* the Crontab
+        and systemd syntax - you'll have to escape it by specifying it twice.
 
     """
 
@@ -67,6 +94,15 @@ class Command(BaseCommand):
     def __init__(self):
         super(Command, self).__init__()
         self.call_after_completion = {}
+
+    # noinspection PyMethodMayBeStatic
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'args',
+            nargs='*',
+            default=[],
+            help="List of arguments (see docs)",
+        )
 
     def _resolve_arg(self, argument):
         try:

@@ -15,15 +15,14 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
-import ldap
+
 import os
+import ldap
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Directories
-
-TEMPLATE_DIRS = (os.path.join(BASE_DIR, "templates"))
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
@@ -41,8 +40,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'configmaster',
-    'south',
-    'icons_famfamfam',
+    'utils.contrib.icons_famfamfam',
     # 'debug_toolbar',
 )
 
@@ -62,37 +60,51 @@ AUTH_LDAP_SERVER_URI = 'ldap://[...]'
 
 AUTH_LDAP_BIND_DN = ""
 AUTH_LDAP_BIND_PASSWORD = ""
-AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=Users,dc=continum,dc=net",
-                                   ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    "ou=Users,dc=example,dc=com",
+    ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
 
 AUTH_LDAP_ALWAYS_UPDATE_USER = True
 AUTH_LDAP_START_TLS = False
 
 AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
-    'ou=Roles,dc=continum,dc=net',
+    'ou=Roles,dc=example,dc=com',
     ldap.SCOPE_SUBTREE)
 
 AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
 
 AUTHENTICATION_BACKENDS = (
-    'django_auth_ldap.backend.LDAPBackend',
+#    'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 
 LOGIN_ALLOWED_GROUPS = ("ldapGroup",)
 
-from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
-
-TEMPLATE_CONTEXT_PROCESSORS += (
-    'django.core.context_processors.request',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.debug'
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(BASE_DIR, "templates")
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.template.context_processors.request',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 ROOT_URLCONF = 'configmaster_project.urls'
 
 WSGI_APPLICATION = 'configmaster_project.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -117,7 +129,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
@@ -136,7 +147,13 @@ CONFIGMASTER_SECURE_GROUP_PLURAL = "secure-"
 
 CONFIGMASTER_NTP_MAX_DELTA = 5
 
-CONFIGMASTER_PW_CHANGE_API_KEY = "<insert API key here>"
+CONFIGMASTER_PW_CHANGE_API_KEY = None
+
+# External CMDB settings
+
+CMDB_EXPORT_URL = None
+CMDB_CREDENTIALS_URL = None
+CMDB_REDIRECT = None
 
 # Session backend
 
@@ -162,4 +179,5 @@ ESXI_FILE_BLACKLIST = (
     'etc/vmware/lunTimestamps.log',
 )
 
+# noinspection PyUnresolvedReferences
 from local_settings import *

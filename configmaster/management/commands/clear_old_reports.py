@@ -12,6 +12,15 @@ from configmaster.models import Report
 
 
 class Command(BaseCommand):
+    """
+    Removes reports older than 7 days.
+
+    Warning:
+        In a production environment, this management command must be
+        periodically invoked by a cronjob, or the database will fill up over
+        time.
+
+    """
     help = "Removes all reports older than 7 days."
 
     def handle(self, *args, **options):

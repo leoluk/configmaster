@@ -43,8 +43,6 @@ def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
             user.first_name = ' '.join(words[:-1])
             user.last_name = words[-1]
 
-        if not str(user.email):
-            user.email = uid + '@continum.net'
     except:
         logger.exception("LDAP update failed")
         return True
@@ -77,8 +75,10 @@ class Credential(models.Model):
 
 class ConnectionSetting(models.Model):
     name = models.CharField(max_length=100)
+
     ssh_port = models.IntegerField(
         verbose_name="SSH port", null=True, blank=True)
+
     use_ssh_config = models.BooleanField(
         verbose_name="Use ssh_config",
         default=False)
@@ -102,8 +102,10 @@ class Repository(locking.LockMixin, models.Model):
 
 
 class DeviceGroup(models.Model):
+
     name = models.CharField(
         "Group name", max_length=100)
+
     plural = models.CharField(max_length=100)
 
     enabled = models.BooleanField(
@@ -138,14 +140,19 @@ class DeviceGroup(models.Model):
 
 class Task(models.Model):
     name = models.CharField(max_length=100)
+
     description = models.TextField(blank=True, default="")
+
     class_name = models.CharField(max_length=100)
+
     enabled = models.BooleanField(default=True)
+
     hide_if_successful = models.BooleanField(
         default=False,
         help_text=(
             "Hide in frontend if the task was successful or the "
             "device is disabled."))
+
     result_url = models.CharField(
         max_length=100, verbose_name="Result URL",
         null=True, blank=True,
@@ -184,7 +191,7 @@ class Task(models.Model):
 
 class DeviceType(models.Model):
     name = models.CharField(max_length=100)
-    tasks = models.ManyToManyField(Task, null=True, blank=True)
+    tasks = models.ManyToManyField(Task, blank=True)
 
     connection_setting = models.ForeignKey(
         ConnectionSetting, null=True, blank=True)
@@ -268,12 +275,13 @@ class Device(locking.LockMixin, models.Model):
     )
 
     name = models.CharField("Device name", max_length=100, blank=True)
-    label = models.CharField("Service label", max_length=4, unique=True)
+    label = models.CharField("Device identifier", max_length=200, unique=True)
     hostname = models.CharField("Host name", max_length=200, blank=True)
 
     enabled = models.BooleanField("Config management enabled", default=True)
+
     sync = models.BooleanField(
-        "Synchronized with PWSafe", default=True,
+        "Synchronized with CMDB", default=True,
         help_text="Disabling this flag does not "
                   "disable the synchronization for this "
                   "device. Certain fields cannot be "
@@ -284,6 +292,7 @@ class Device(locking.LockMixin, models.Model):
                   'For Fortigate devices, this is a "feature of '
                   'last resort" (incomplete config).',
         verbose_name="Do not use SCP", default=False)
+
     credential = models.ForeignKey(Credential,
                                    help_text="Overrides group default.",
                                    null=True, blank=True)
@@ -317,12 +326,14 @@ class Device(locking.LockMixin, models.Model):
         return self.enabled and self.group.enabled
 
     @property
-    def asset_db_url(self):
-        return settings.PWSAFE_ASSETDB_REDIRECT % self.label
+    def cmdb_redirect_url(self):
+        if settings.CMDB_REDIRECT:
+            return settings.CMDB_REDIRECT % self.label
 
     @property
-    def pwsafe_url(self):
-        return settings.PWSAFE_DEVICE_URL % self.label
+    def credentials_url(self):
+        if settings.CMDB_CREDENTIALS_URL:
+            return settings.CMDB_CREDENTIALS_URL % self.label
 
     @property
     def number_of_successful_runs(self):
@@ -354,7 +365,9 @@ class Device(locking.LockMixin, models.Model):
 
         Deprecated! (see commit 9d75caff51df, the latest report for each
         task is now stored in the database)
+
         """
+
         reports = []
         if not self.device_type:
             return
@@ -426,14 +439,6 @@ class Device(locking.LockMixin, models.Model):
             return "Error: regex present, but no match"
         except IOError:
             return "Error: no config"
-
-    def has_x_label(self):
-        """
-        A device which has an X label is not synchronized from AssetDB, but
-        has been manually added to PWSafe.
-        :rtype : bool
-        """
-        return self.label[0] == "X"
 
     def get_ssh_connection_info(self):
         """

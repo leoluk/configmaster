@@ -53,10 +53,10 @@ class ProCurveRemoteControl(common.NetworkDeviceRemoteControl):
         return self.run_command('show time')
 
 if __name__ == '__main__':
-    import getpass
+    hostname, credentials = common.interactive_debug_query()
 
-    rc = ProCurveRemoteControl("procurve.continum.net")
-    rc.connect(common.DEBUG_USER, getpass.getpass())
+    rc = ProCurveRemoteControl(hostname)
+    rc.connect(*credentials)
 
     time = rc.get_time()
 

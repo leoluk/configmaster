@@ -70,15 +70,18 @@
             {% endif %}
         </a>
         {% endwith %}
-        {% if not device.has_x_label %}
-            <a class="action" data-toggle="tooltip" title="AssetDB lookup"
-               href="{{ device.asset_db_url }}" target="_blank">{% icon "database_go" %}
+        {% if device.sync and device.cmdb_redirect_url %}
+            <a class="action" data-toggle="tooltip" title="CMDB lookup"
+               href="{{ device.cmdb_redirect_url }}" target="_blank">{% icon "database_go" %}
         {% else %}
-            <a class="action" data-toggle="tooltip" title="No AssetDB sync!">{% icon "database_error" %}
+            <a class="action" data-toggle="tooltip"
+               title="Not synced with CMDB">{% icon "database_error" %}
         {% endif %}
         </a>
-        <a class="action" data-toggle="tooltip" title="PWSafe lookup"
-           href="{{ device.pwsafe_url }}" target="_blank">{% icon "key_go" %}</a>
+        {% if device.credentials_url %}
+            <a class="action" data-toggle="tooltip" title="Credential store lookup"
+               href="{{ device.credentials_url }}" target="_blank">{% icon "key_go" %}</a>
+        {% endif %}
     </div>
 </td>
 </tr>

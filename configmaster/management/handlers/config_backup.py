@@ -18,8 +18,6 @@ from configmaster.management.handlers.network_device import \
 from configmaster.models import DeviceType, DeviceGroup, Repository, Device
 
 
-__author__ = 'lschabel'
-
 
 class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def __init__(self, device):
@@ -28,30 +26,50 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         writes the config files to the file system. It can get the config
         using an interactive session or the SCP subsystem, if it is
         supported and enabled for a particular device. It commits the config
-        files to a git repository if the TASK_FW_CONFIG_DISABLE_GIT setting
-        is enabled.
+        files to a git repository if the
+        :option:`TASK_CONFIG_BACKUP_DISABLE_GIT` setting is set.
+
+        All SSH connection logic is inherited from its parent class.
+
+        In most cases, implementing a new device type should not necessitate
+        subclassing.
         """
 
         super(NetworkDeviceConfigBackupHandler, self).__init__(device)
 
     def _connect_ssh(self):
         """
-        Override the inherited login method and instruct the remote control
-        class to not open any SSH channels. Some firewalls (Juniper) only
-        support one channel per connection.
+        Overrides the inherited login method and instructs the remote control
+        class to not open any SSH channels by default. Some devices (Juniper
+        SSG!) only support one channel per connection.
         """
-        self.connection.connect(self.credential.username,
-                                self.credential.password,
-                                open_command_channel=False,
-                                open_scp_channel=False)
+        self.connection.connect(
+            self.credential.username,
+            self.credential.password,
+            open_command_channel=False,
+            open_scp_channel=False)
 
     @staticmethod
     def _git_commit(commit_message):
         """
         Do a git commit in the current directory with the given commit
-        message (without adding any changes). Returns True if a commit has
-        been made and False if there weren't any changes. Raises an
-        exception in case of failure
+        message (without adding any changes). Instead of using a Git wrapper
+        library, we directly call the Git binaries using :mod:`sh`, which
+        ensures that error return codes are either handled or raised.
+
+        If the :option:`DEBUG` setting is set, a Git push is attempted after
+        commiting.
+
+        Args:
+            commit_message (str): Single-line commit message
+
+        Returns:
+            *True* if a commit has been made and `False` if there weren't any
+            changes.
+
+        Raises:
+            :exc:`sh.ErrorReturnCode` exception in case of failure.
+
         """
 
         # This is, of course, not the most sophisticated approach at
@@ -82,8 +100,14 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         return changes
 
     def _get_config_checksum(self):
-        """Read the config checksum from the device. Only supported on
-        certain devices (raises NotImplementedError otherwise)."""
+        """
+        Read the config checksum from the device using a separate SSH
+        connection. Only supported on certain devices.
+
+        Raises:
+            NotImplementedError: if device does not support checksumming
+
+        """
 
         # Open a separate connection to the device, bypassing the parent's
         # connection initializer. This means that we have to handle the
@@ -101,7 +125,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
     def _compare_config_checksum(self):
         """
         Returns True if the config checksum is identical. Updates the
-        Device.last_checksum field if necessary.
+        :attr:`configmaster.models.Device.last_checksum` field if necessary.
         """
 
         checksum = self._get_config_checksum()
@@ -113,8 +137,25 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         else:
             return True
 
-    def _read_config_from_device(self, temp_filename, startup_config=False,
-                                 use_scp=True):
+    def _read_config_from_device(
+            self, temp_filename, startup_config=False, use_scp=True):
+        """
+        This method implements the actual configuration backup part. It
+        reads the config from the device (either interactively or by using
+        SCP) and writes it to a file.
+
+        Called from the main config backup method (:meth:`run`).
+
+        Args:
+            temp_filename (str): Path to write config file to
+
+            startup_config (bool): Reads the startup config if `True` or the
+                running config if `False`.
+
+            use_scp (bool): Read the config using SCP (``read_config_scp``
+                instead of ``read_config``).
+
+        """
         if not self.device.do_not_use_scp and use_scp:
             try:
                 self.connection.open_scp_channel()
@@ -141,9 +182,18 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                        "(empty or non-existing backup file)")
 
     def _initialize_temporary_directory(self):
+        """
+        Create a device-specific temporary directory and a temporary filename.
 
-        # Create a temporary directory to prevent accidental overwrites,
-        # race conditions, and inconsistent state.
+        A temporary file is necessary for the config backup in order to
+        prevent accidental overwrites, race conditions, and inconsistent state.
+
+        Called from the main config backup method (:meth:`run`).
+
+        Returns:
+            tuple: (filename, temp_dir, temp_filename)
+
+        """
 
         temp_dir = tempfile.mkdtemp()
         filename = self.device.config_backup_filename
@@ -154,7 +204,15 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         return filename, temp_dir, temp_filename
 
-    def _cleanup_config(self, temp_filename):
+    def _cleanup_and_convert_config(self, temp_filename):
+        """
+        Applies the devices type's regex filters to the temporary file.
+
+        If the device type is named ``Juniper SSG``, the file is converted
+        from ISO-8859-2 encoding to UTF-8.
+
+        Called from the main config backup method (:meth:`run`).
+        """
 
         # The entire file is read into memory, processed,
         # and written back. This is, of course, not particularly
@@ -164,7 +222,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         # entire file in memory while receiving it. The temporary
         # file is stored in /tmp, which is a tmpfs (in-memory
         # filesystem) on many platforms, so there's no additional
-        # disk I/O in these cases.
+        # disk I/O in these cases (and it would be in the page cache
+        # either way).
 
         with open(temp_filename) as f:
             raw_config = f.read()
@@ -181,6 +240,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         # Juniper SSG firewalls encode their config as ISO-8859-2.
         # Convert it to UTF8 so that all configs use the same encoding.
+        #
+        # TODO: remove hardcoded device type name (should be a type flag)
+        #
         if self.device.device_type.name == "Juniper SSG":
             with codecs.open(temp_filename, encoding="iso-8859-2") as f:
                 raw_config = f.read()
@@ -188,14 +250,29 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 f.write(raw_config)
 
     def run(self, *args, **kwargs):
+        """
+        Per-device config backup. Calls all of the methods above. The device
+        config is stored in the repository, committed and the version info
+        is extracted and saved.
+
+        Acquires a global lock on the repository. The task runner already
+        holds the device lock.
+
+        If the device checksum did not change, the whole process is skipped.
+
+        .. todo:: Document checksum mechanism
+        """
+
         if self.device.device_type.checksum_config_compare:
             if self._compare_config_checksum():
                 return self._return_success(
                     "Config backup successful (skipped, checksum identical)")
 
-        filename, temp_dir, temp_filename = self._initialize_temporary_directory()
+        filename, temp_dir, temp_filename = (
+            self._initialize_temporary_directory())
+
         self._read_config_from_device(temp_filename)
-        self._cleanup_config(temp_filename)
+        self._cleanup_and_convert_config(temp_filename)
 
         # Move the temporary file to the config folder and clean up
         # the temporary directory.
@@ -242,12 +319,30 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         ))
 
     def cleanup(self):
+        """
+        Does a ``git reset --hard`` to clean up any left-over temporary
+        files in the repository.
+        """
         if self.device.group.repository.lock.acquired:
             os.chdir(self.device.group.repository.path)
             git.reset('--hard')
 
     @classmethod
     def run_completed(cls):
+        """
+        Many things happen once run is complete. At this point, all of the
+        device configs are already committed.
+
+        * Each device is symlinked in the `ByHostname` directory and symlinks
+          for deleted device are removed.
+
+        * All repositories are pushed to the default remote.
+
+        * All device type regex filters are committed to the repository
+          with the ID 1. This is done in order to track changes to the filters.
+
+        """
+
         super(NetworkDeviceConfigBackupHandler, cls).run_completed()
 
         # Generate "ByHostname" symlinks
@@ -288,6 +383,8 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 os.chdir(device_group.repository.path)
                 git.push()
 
+        # TODO: make the repository ID configurable
+
         os.chdir(Repository.objects.get(id=1).path)
 
         for device_type in DeviceType.objects.all():
@@ -309,5 +406,3 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         for repository in Repository.objects.all():
             repository.lock.release()
-
-

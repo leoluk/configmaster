@@ -1,5 +1,8 @@
 *.pyc
 *.tmp
 .idea
+*.iml
 db.sqlite3
 local_settings.py
+docs/api
+test_config.yaml

@@ -1,0 +1,26 @@
+# For security reason, documentation dependencies are not included in the main
+# requirements file.
+
+Babel==2.4.0
+Jinja2==2.9.6
+MarkupSafe==1.0
+PyYAML==3.12
+Pygments==2.2.0
+Sphinx==1.6.3
+alabaster==0.7.10
+argh==0.26.2
+backports-abc==0.5
+backports.ssl-match-hostname==3.5.0.1
+certifi==2017.4.17
+docutils==0.13.1
+imagesize==0.7.1
+livereload==2.5.1
+pathtools==0.1.2
+port-for==0.3.1
+singledispatch==3.4.0.3
+snowballstemmer==1.2.1
+sphinx-autobuild==0.7.1
+sphinxcontrib-websupport==1.0.1
+tornado==4.5.1
+typing==3.6.1
+watchdog==0.8.3

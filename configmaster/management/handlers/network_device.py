@@ -31,7 +31,9 @@ class SSHDeviceHandler(BaseHandler):
         handles the most common OS and Paramiko connection errors. Does not
         provide any connection facilities.
 
-        :type device: configmaster.models.Device
+        Args:
+            device (configmaster.models.Device): Device object
+
         """
 
         super(SSHDeviceHandler, self).__init__(device)
@@ -47,11 +49,14 @@ class SSHDeviceHandler(BaseHandler):
 
     @contextmanager
     def _catch_connection_errors(self):
+        """
+        Context manager that handles network/connections errors (all other
+        errors will be caught by the task runner and reported with full
+        traceback).
+        """
+
         try:
             yield
-
-        # Handle network/connections errors (all other errors will be caught
-        # by the task runner and reported with full traceback).
 
         except socket.timeout, e:
             self._fail("Client error: Socket timeout")
@@ -73,6 +78,8 @@ class SSHDeviceHandler(BaseHandler):
 
 
 class NetworkDeviceHandler(SSHDeviceHandler):
+    # TODO: move class name to database, just like it's already done with tasks
+
     RC_CLASSES = {
         u"Fortigate": FortigateRemoteControl,
         u"Juniper SSG": JuniperRemoteControl,
@@ -112,7 +119,9 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         Instantiates and returns the correct remote controller for the        # noinspection PyTypeChecker
         device's device_type.
 
-        :rtype : NetworkDeviceRemoteControl
+        Returns:
+            NetworkDeviceRemoteControl: Remote control object
+
         """
 
         ssh_hostname, ssh_port = self.device.get_ssh_connection_info()
@@ -142,6 +151,9 @@ class NetworkDeviceHandler(SSHDeviceHandler):
 
 
 class SSHLoginTestHandler(NetworkDeviceHandler):
+    """
+    No-op handler that simply attempts to login to the device.
+    """
     def _connect_ssh(self):
         # ProCurve switches close the channel if a shell without TTY is
         # requested.

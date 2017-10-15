@@ -59,6 +59,7 @@ class ReportAdmin(admin.ModelAdmin):
 class CredentialAdminForm(forms.ModelForm):
     class Meta:
         model = Credential
+        fields = '__all__'
 
     new_password = forms.CharField(
         required=False,

@@ -4,6 +4,14 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
+"""
+Each task in the database invokes a handler. Handlers contain the high-level
+implementations of a task and usually invoke external libraries like those
+found in :mod:`utils.remote`.
+
+They are invoked by :mod:`configmaster.management.commands.run`.
+"""
+
 # Import all "public" task handlers here. Tasks handlers not imported
 # here cannot be directly invoked.
 

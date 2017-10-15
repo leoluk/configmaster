@@ -11,7 +11,7 @@ from configmaster.management.handlers.network_device import \
 class PasswordChangeHandler(NetworkDeviceHandler):
     """
     Special handler which implements password changes for
-    PasswordChangeAPIView.
+    :class:`configmaster.views.PasswordChangeAPIView`.
 
     Incompatible with task runner!
     """
@@ -30,7 +30,7 @@ class PasswordChangeHandler(NetworkDeviceHandler):
 
     def _connect_ssh(self):
         """
-        We override the default connection method since we don't want to use
-        the default
+        We override the default connection method since we want to open
+        a command channel.
         """
         self.connection.connect(self.username, self.current_password)

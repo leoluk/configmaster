@@ -7,6 +7,7 @@
 import json
 import traceback
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
 
 from django.core.management import call_command
 from django.core.urlresolvers import reverse
@@ -28,7 +29,6 @@ from configmaster.models import Device, Task, DeviceGroup
 class DashboardView(ListView):
     template_name = 'configmaster/dashboard.html'
     queryset = (Device.objects.order_by('-enabled', 'group', 'name')
-                .select_related('group__name')
                 .prefetch_related("latest_reports")
                 .prefetch_related("latest_reports__task")
                 .exclude(latest_reports__isnull=True))
@@ -50,8 +50,8 @@ class VersionInfoView(ListView):
 class DashboardRunView(View):
     def post(self, request, *args, **kwargs):
         try:
-            device = Device.objects.get(label=request.REQUEST['device'])
-            task = Task.objects.get(id=request.REQUEST['task'])
+            device = Device.objects.get(label=request.POST['device'])
+            task = Task.objects.get(id=request.POST['task'])
         except (Device.DoesNotExist, Task.DoesNotExist):
             return HttpResponseBadRequest("No such device or task")
 
@@ -72,7 +72,7 @@ class DashboardRunView(View):
 class DeviceGetVersionAPIView(View):
     def get(self, request, *args, **kwargs):
         try:
-            device = Device.objects.get(label=request.REQUEST['device'])
+            device = Device.objects.get(label=request.GET['device'])
         except Device.DoesNotExist:
             return HttpResponseBadRequest("No such device")
         except KeyError:
@@ -88,8 +88,8 @@ class DeviceGetVersionAPIView(View):
 class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):
         try:
-            device = Device.objects.get(label=request.REQUEST['device'])
-            task = Task.objects.get(id=request.REQUEST['task'])
+            device = Device.objects.get(label=request.GET['device'])
+            task = Task.objects.get(id=request.GET['task'])
         except Device.DoesNotExist:
             return HttpResponseBadRequest("No such device")
         except Task.DoesNotExist:
@@ -156,26 +156,27 @@ class PasswordChangeAPIView(View):
     Right now, this view uses the same libraries, but is not coupled to the
     task runner since the password change task does not fit the current task
     model (for example: additional, secret parameters). We provide an API
-    endpoint for PWSafe to use, and the task queue and result storage is
-    managed by PWSafe. We still want to use the ConfigMaster SSH connection
-    settings for devices managed by ConfigMaster. This means that this view
-    calls the device handlers itself (re-consider when T47 is implemented!)
-    and needs to handle all possible failures that run.py handles.
+    endpoint for external services to use, and the task queue and the
+    external service is responsible for dealing with the result. We still
+    want to use the ConfigMaster SSH connection settings for devices managed
+    by ConfigMaster. This means that this view calls the device handlers
+    itself (re-consider when T47 is implemented!) and needs to handle all
+    possible failures that run.py handles.
 
     """
 
     def post(self, request, *args, **kwargs):
         try:
-            api_key = request.REQUEST['api_key']
+            api_key = request.POST['api_key']
 
             if api_key != settings.CONFIGMASTER_PW_CHANGE_API_KEY:
                 return HttpResponseBadRequest(
                     "Invalid API key")
 
-            username = request.REQUEST['username']
-            current_password = request.REQUEST['current_password']
-            new_password = request.REQUEST['new_password']
-            device = Device.objects.get(label=request.REQUEST['device'])
+            username = request.POST['username']
+            current_password = request.POST['current_password']
+            new_password = request.POST['new_password']
+            device = Device.objects.get(label=request.POST['device'])
         except Device.DoesNotExist:
             return HttpResponse(json.dumps({
                 'result': 'unknown',
@@ -214,6 +215,9 @@ class PasswordChangeAPIView(View):
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
+        if not settings.CONFIGMASTER_PW_CHANGE_API_KEY:
+            raise SuspiciousOperation("Disabled PW change endpoint accessed")
+
         return super(PasswordChangeAPIView, self).dispatch(
             request, *args, **kwargs)
 
@@ -221,11 +225,11 @@ class PasswordChangeAPIView(View):
 class RedirectView(View):
     def get(self, request, *args, **kwargs):
         try:
-            type_ = request.REQUEST['type']
+            type_ = request.GET['type']
             if type_ not in ('report', 'result'):
                 return HttpResponseBadRequest("Invalid parameter")
-            device = Device.objects.get(label=request.REQUEST['device'])
-            task = Task.objects.get(id=request.REQUEST['task'])
+            device = Device.objects.get(label=request.GET['device'])
+            task = Task.objects.get(id=request.GET['task'])
             report = device.get_latest_report_for_task(task)
 
             if not report:

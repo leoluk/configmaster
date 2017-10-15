@@ -17,7 +17,22 @@ from django.utils import timezone
 
 
 class NetworkDeviceNTPHandler(NetworkDeviceHandler):
+    def __init__(self, device):
+        """
+        This handler compares the device's time with the local and fails
+        if the offset exceeds :option:`CONFIGMASTER_NTP_MAX_DELTA`.
+
+        The remote control must implement the ``get_time()`` interface.
+
+        It assumes that all devices are set to same timezone as the
+        ConfigMaster host.
+        """
+
+        super(NetworkDeviceNTPHandler, self).__init__(device)
+
     def run(self, *args, **kwargs):
+        # TODO: handle per-device timezones
+
         time = timezone.make_aware(
             self.connection.get_time(),
             timezone.get_current_timezone())

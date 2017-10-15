@@ -6,7 +6,10 @@
 
 """
 This management command is called at the end of each run and moves config
-files for devices which are no longer in the database to a _Archive folder.
+files for devices which are no longer in the database to an ``_Archive`` folder.
+
+You do not need to run this command from the command line.
+
 """
 
 import os

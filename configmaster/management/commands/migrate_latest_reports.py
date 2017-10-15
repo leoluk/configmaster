@@ -9,6 +9,12 @@ from configmaster.models import Device
 
 
 class Command(BaseCommand):
+    """
+    Recalculate the latest_reports cache for all devices.
+
+    Debugging command.
+    """
+
     def handle(self, *args, **options):
         for device in Device.objects.all():
             latest_reports = device._latest_reports

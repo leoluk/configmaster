@@ -16,8 +16,6 @@ from paramiko.ssh_exception import SSHException
 
 from utils.contrib import scp, pexpect
 
-DEBUG_USER = "lschabel"
-
 FORTINET_KEX_ORDER = (
     'diffie-hellman-group-exchange-sha1',
     'diffie-hellman-group1-sha1',
@@ -43,6 +41,22 @@ class OperationalError(RemoteException):
 
 class LoginFailedException(RemoteException):
     pass
+
+
+def interactive_debug_query():
+    """
+    Interactively query for connection parameters for interactive debugging.
+
+    Returns:
+        tuple: (hostname, (username, password))
+
+    """
+
+    hostname = raw_input('Hostname: ')
+    username = raw_input('Username: ')
+    password = getpass.getpass()
+
+    return hostname, (username, password)
 
 
 class BaseRemoteControl(object):
@@ -252,6 +266,6 @@ class GuessingFirewallRemoteControl(NetworkDeviceRemoteControl):
 if __name__ == '__main__':
     import getpass
 
-    rc = GuessingFirewallRemoteControl("192.168.50.50")
+    rc = GuessingFirewallRemoteControl(raw_input("Hostname: "))
     rc.connect("root", getpass.getpass())
     print rc.guess_type()
