@@ -84,7 +84,7 @@ def test_juniper_config_backup(
         device_type=device_type,
     )
     device.save()
-    
+
     # The version is retrieved with the config compare task
     _check_config_backup(
         device,
@@ -115,3 +115,38 @@ def test_procurve_config_backup(
         config['repository']['path'],
         device_info['version'],
     )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('device_info', config['fortigates'])
+def test_fortigate_no_backup_if_the_config_did_not_change(
+        device_type_fortigate,
+        device_group,
+        backup_task,
+        device_info,
+):
+    device_type = device_type_fortigate
+
+    hostname = device_info['hostname']
+    device_type.tasks.add(backup_task)
+    device_type.checksum_config_compare = True
+    device_type.save()
+    device = Device(
+        label=DUMMY_LABEL,
+        hostname=hostname,
+        group=device_group,
+        device_type=device_type,
+    )
+    device.save()
+
+    _check_config_backup(
+        device,
+        config['repository']['path'],
+        device_info['version'],
+    )
+    # Since the config did not change, there should be no new commit
+    with pytest.raises(AssertionError):
+        _check_config_backup(
+            device,
+            config['repository']['path'],
+        )

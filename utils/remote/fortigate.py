@@ -131,11 +131,25 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
         except IndexError:
             raise common.OperationalError("Failed to get checksum")
 
+    def _try_to_get_checksum(self, checksum_commands):
+        for checksum_command in checksum_commands:
+            try:
+                return self._get_config_checksum(checksum_command)
+            except common.OperationalError:
+                pass
+        raise common.OperationalError("Failed to get checksum")
+
     def get_config_checksum(self):
+        checksum_commands = [
+            'diagnose sys ha checksum show',
+            'diagnose sys ha showcsum',
+        ]
         try:
-            return self._get_config_checksum('diagnose sys ha checksum show')
+            return self._try_to_get_checksum(checksum_commands)
         except common.OperationalError:
-            return self._get_config_checksum('diagnose sys ha showcsum')
+            # In case of VDOMs, the context has to be the global
+            with self.ctx_config_block('global'):
+                return self._try_to_get_checksum(checksum_commands)
 
     @contextmanager
     def ctx_config_block(self, path):
