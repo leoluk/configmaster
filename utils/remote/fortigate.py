@@ -117,7 +117,8 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
             self.run_command("set admin-scp enable", True)
 
     def read_sysinfo(self):
-        output = self.run_command("get system status")
+        with self.ctx_term_setup():
+            output = self.run_command("get system status")
         match = RE_SYSINFO.match(output)
 
         if match:
