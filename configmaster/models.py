@@ -35,8 +35,8 @@ def update_user_from_ldap(sender, user=None, ldap_user=None, **kwargs):
         user.password = "!"
         user.is_staff = True
         user.is_superuser = True
-        user.is_active = ([group in settings.LOGIN_ALLOWED_GROUPS for group in
-                           ldap_user.group_names])
+        user.is_active = any([group in settings.LOGIN_ALLOWED_GROUPS
+                              for group in ldap_user.group_names])
 
         if name:
             words = name[0].split()
