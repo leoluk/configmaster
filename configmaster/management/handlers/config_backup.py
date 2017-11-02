@@ -4,6 +4,7 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
+import logging
 import codecs
 from django.conf import settings
 import os
@@ -17,6 +18,8 @@ from configmaster.management.handlers.network_device import \
     NetworkDeviceHandler, RE_MATCH_FIRST_WORD
 from configmaster.models import DeviceType, DeviceGroup, Repository, Device
 
+
+logger = logging.getLogger(__name__)
 
 
 class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
@@ -128,7 +131,11 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         :attr:`configmaster.models.Device.last_checksum` field if necessary.
         """
 
-        checksum = self._get_config_checksum()
+        try:
+            checksum = self._get_config_checksum()
+        except Exception as e:
+            logger.exception(e)
+            return False
 
         if checksum != self.device.last_checksum:
             self.device.last_checksum = checksum
