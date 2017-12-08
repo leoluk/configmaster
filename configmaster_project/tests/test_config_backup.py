@@ -2,7 +2,7 @@ import pytest
 
 from django.core.management import call_command
 
-from configmaster.models import Device
+from configmaster.models import Device, Repository
 from .utils import get_last_commit_message, get_last_commit_id
 from conftest import config, DUMMY_LABEL
 
@@ -150,3 +150,45 @@ def test_fortigate_no_backup_if_the_config_did_not_change(
             device,
             config['repository']['path'],
         )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('device_info', config['fortigates'])
+def test_fortigate_backup_also_fails_on_repeated_runs(
+        device_type_fortigate,
+        device_group,
+        backup_task,
+        device_info,
+):
+    from configmaster.management.handlers.config_backup import NetworkDeviceConfigBackupHandler
+
+    device_type = device_type_fortigate
+    device_type.tasks.add(backup_task)
+    device_type.checksum_config_compare = True
+    device_type.save()
+
+    # Create a device with a non-existing repository to provoke an error
+    wrong_repository = Repository(path='wrong_repository_path')
+    wrong_repository.save()
+    device_group.repository = wrong_repository
+    device_group.save()
+    hostname = device_info['hostname']
+    device = Device(
+        label=DUMMY_LABEL,
+        hostname=hostname,
+        group=device_group,
+        device_type=device_type,
+    )
+    device.save()
+
+    handler = NetworkDeviceConfigBackupHandler(device)
+
+    # Run should fail because repository is not found
+    with pytest.raises(OSError) as e:
+        handler.run()
+    assert 'No such file or directory' in str(e)
+
+    # Second run should fail as well
+    with pytest.raises(OSError) as e:
+        handler.run()
+    assert 'No such file or directory' in str(e)
