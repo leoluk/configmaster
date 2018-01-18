@@ -66,6 +66,9 @@ def test_fortigate_config_backup(
         device_info['version'],
     )
 
+    report = device.get_latest_report_for_task(backup_task)
+    assert report.result_is_success()
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('device_info', config['junipers'])

@@ -248,10 +248,13 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
                 f.write(raw_config)
 
     def _return_success(self, message, *args):
-        if self.device.last_checksum != self.checksum:
-            self.device.last_checksum = self.checksum
-            self.device.save(update_fields=['last_checksum'])
-        super(NetworkDeviceConfigBackupHandler, self)._return_success(message, *args)
+        has_new_checksum = getattr(self, 'checksum', False)
+        if has_new_checksum and self.device.last_checksum != self.checksum:
+                self.device.last_checksum = self.checksum
+                self.device.save(update_fields=['last_checksum'])
+        return super(
+            NetworkDeviceConfigBackupHandler, self
+        )._return_success(message, *args)
 
     def run(self, *args, **kwargs):
         """
