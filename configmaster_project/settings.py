@@ -179,5 +179,23 @@ ESXI_FILE_BLACKLIST = (
     'etc/vmware/lunTimestamps.log',
 )
 
-# noinspection PyUnresolvedReferences
-from local_settings import *
+
+try:
+    # noinspection PyUnresolvedReferences
+    from local_settings import *
+except ImportError:
+    # No local_setting.py - running on OpenShift?
+
+    import openshift_db
+    DATABASES['default'] = openshift_db.config()
+
+    SECRET_KEY = os.getenv(
+        'DJANGO_SECRET_KEY',
+        # safe value used for development when DJANGO_SECRET_KEY might not be set
+        '9e4@&tw46$l31)zrqe3wi+-slqm(ruvz&se0^%9#6(_w3ui!c0'
+    )
+
+    if os.getenv('DJANGO_DEBUG'):
+        DEBUG = True
+        ALLOWED_HOSTS = ['*']
+        INTERNAL_IPS = ['127.0.0.1']

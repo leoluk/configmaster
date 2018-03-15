@@ -1,0 +1,284 @@
+apiVersion: v1
+kind: Template
+labels:
+  app: configmaster
+  template: configmaster
+metadata:
+  name: configmaster
+  template.openshift.io/bindable: "false"
+parameters:
+- displayName: Name
+  name: NAME
+  required: true
+  value: configmaster
+- displayName: Database Username
+  name: DATABASE_USER
+  required: true
+  value: django
+- displayName: Database User Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_PASSWORD
+- description: Set this to a long random string.
+  displayName: Django Secret Key
+  from: '[\w]{50}'
+  generate: expression
+  name: DJANGO_SECRET_KEY
+- description: Password for the MariaDB root user.
+  displayName: MariaDB root Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_ROOT_PASSWORD
+  required: true
+- description: Database volume capacity
+  displayName: Volume Capacity
+  name: VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+objects:
+
+#------------------------------------------------- Django
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${NAME}
+  stringData:
+    django-secret-key: ${DJANGO_SECRET_KEY}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: ${NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${NAME}:latest
+    postCommit: {}
+    runPolicy: Serial
+    source:
+      git:
+        ref: openshift
+        uri: https://github.com/leoluk/configmaster
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: python:2.7
+          namespace: openshift
+      type: Source
+    triggers:
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${NAME}
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: ${NAME}
+          deploymentconfig: ${NAME}
+      spec:
+        containers:
+        - env:
+          - name: APP_CONFIG
+            value: openshift/gunicorn-dev.py
+          - name: DJANGO_DEBUG
+            value: "1"
+          - name: DATABASE_ENGINE
+            value: mysql
+          - name: DATABASE_SERVICE_NAME
+            value: DATABASE
+          - name: DATABASE_SERVICE_HOST
+            value: ${NAME}-db
+          - name: DATABASE_SERVICE_PORT
+            value: "3306"
+          - name: DJANGO_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                key: django-secret-key
+                name: ${NAME}
+          - name: DATABASE_NAME
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: ${NAME}-db
+          - name: DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: ${NAME}-db
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: ${NAME}-db
+          name: ${NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+        restartPolicy: Always
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: ${NAME}
+  spec:
+    port:
+      targetPort: devserver
+    tls:
+      termination: edge
+    to:
+      kind: Service
+      name: ${NAME}
+      weight: 100
+    wildcardPolicy: None
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${NAME}
+  spec:
+    ports:
+    - name: devserver
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: ${NAME}
+    type: ClusterIP
+
+#------------------------------------------------- Database
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${NAME}-db
+  stringData:
+    database-name: ${DATABASE_USER}
+    database-password: ${DATABASE_PASSWORD}
+    database-root-password: ${DATABASE_ROOT_PASSWORD}
+    database-user: ${DATABASE_USER}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${NAME}-db
+  spec:
+    ports:
+    - name: mariadb
+      port: 3306
+    selector:
+      name: ${NAME}-db
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${NAME}-db
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: "true"
+    name: ${NAME}-db
+  spec:
+    replicas: 1
+    selector:
+      name: ${NAME}-db
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${NAME}-db
+      spec:
+        containers:
+        - env:
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: ${NAME}-db
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: ${NAME}-db
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-root-password
+                name: ${NAME}-db
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: ${NAME}-db
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 3306
+            timeoutSeconds: 1
+          name: mariadb
+          ports:
+          - containerPort: 3306
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE
+                -e 'SELECT 1'
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: ${NAME}-db-data
+        volumes:
+        - name: ${NAME}-db-data
+          persistentVolumeClaim:
+            claimName: ${NAME}-db
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mariadb
+        from:
+          kind: ImageStreamTag
+          name: mariadb:10.1
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
