@@ -11,6 +11,10 @@ parameters:
   name: NAME
   required: true
   value: configmaster
+- displayName: Git Reference
+  name: GIT_REF
+  required: true
+  value: master
 - displayName: Database Username
   name: DATABASE_USER
   required: true
@@ -40,6 +44,16 @@ objects:
 #------------------------------------------------- Django
 
 - apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${NAME}-data
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+- apiVersion: v1
   kind: Secret
   metadata:
     name: ${NAME}
@@ -58,7 +72,7 @@ objects:
     runPolicy: Serial
     source:
       git:
-        ref: openshift
+        ref: ${GIT_REF}
         uri: https://github.com/leoluk/configmaster
       type: Git
     strategy:
@@ -88,12 +102,26 @@ objects:
       deploymentconfig: ${NAME}
     strategy:
       type: Recreate
+      recreateParams:
+        post:
+          execNewPod:
+            command:
+              - fixtures/init_dev.sh
+            containerName: configmaster
+            volumes:
+              - shared-data
+          failurePolicy: Abort
+        timeoutSeconds: 600
     template:
       metadata:
         labels:
           app: ${NAME}
           deploymentconfig: ${NAME}
       spec:
+        volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: ${NAME}-data
         containers:
         - env:
           - name: APP_CONFIG
@@ -132,6 +160,9 @@ objects:
           ports:
           - containerPort: 8080
             protocol: TCP
+          volumeMounts:
+            - name: shared-data
+              mountPath: /opt/app-root/data
         restartPolicy: Always
     test: false
     triggers:
