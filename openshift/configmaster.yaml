@@ -143,6 +143,16 @@ objects:
             value: /opt/app-root/data/ssh_config
           - name: TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS
             value: /opt/app-root/data/ssh_known_hosts
+          - name: GIT_AUTHOR_NAME
+            value: ConfigMaster
+          - name: GIT_AUTHOR_EMAIL
+            value: configmaster@dev
+          - name: GIT_COMMITTER_NAME
+            value: ConfigMaster
+          - name: GIT_COMMITTER_EMAIL
+            value: configmaster@dev
+          - name: DJANGO_TIME_ZONE
+            value: UTC
           - name: DJANGO_SECRET_KEY
             valueFrom:
               secretKeyRef:

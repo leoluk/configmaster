@@ -69,13 +69,7 @@ class FortigateRemoteControl(common.NetworkDeviceRemoteControl):
             raise NotImplementedError("Fortigate firewalls only have one"
                                       "configuration")
 
-        # TODO: extract exec_command boilerplate into generic method
-        chan = self.transport.open_session()
-        chan.settimeout(self.timeout)
-        output_file = chan.makefile()
-        chan.exec_command("show")
-        output = output_file.read()
-        chan.close()
+        output = self.exec_command("show")
         prompt = output[-10:].split('\n')[-1]
         return output.strip(prompt).replace("--More-- \r         \r", "")
 

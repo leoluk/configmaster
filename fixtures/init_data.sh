@@ -1,13 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-BASE=/opt/app-root/data/
+BASE=/opt/app-root/data
 
 touch $BASE/ssh_config
 touch $BASE/ssh_known_hosts
-
-git config --global user.name "ConfigMaster"
-git config --global user.email "configmaster@dev"
 
 function init_repo() {
   REPO="$BASE/$1"

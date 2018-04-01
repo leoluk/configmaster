@@ -203,6 +203,25 @@ class SSHRemoteControl(BaseRemoteControl):
             if transport:
                 transport.close()
 
+    def exec_command(self, command):
+        """
+        Execute a command via a dedicated command channel.
+        Works for any SSH server which implements non-interactive commands.
+
+        Not be mistaken for :func:`NetworkDeviceRemoteControl.run_command`,
+        which uses an interactive console session.
+        """
+        chan = self.transport.open_session()
+
+        try:
+            chan.settimeout(self.timeout)
+            output_file = chan.makefile()
+            chan.exec_command(command)
+            output = output_file.read()
+            return output
+        finally:
+            chan.close()
+
 
 class NetworkDeviceRemoteControl(SSHRemoteControl):
     def __init__(self, *args, **kwargs):

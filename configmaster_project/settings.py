@@ -135,7 +135,7 @@ if os.getenv('DATABASE_SERVICE_NAME'):
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Berlin'
+TIME_ZONE = os.getenv('DJANGO_TIME_ZONE', 'Europe/Berlin')
 
 USE_I18N = True
 
@@ -177,6 +177,10 @@ TASK_CONFIG_BACKUP_SSH_CONFIG = os.getenv(
 TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS = os.getenv(
     'TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS',
     os.path.expanduser('~/.ssh/known_hosts'))
+
+# Disable Git commit (useful for development)
+TASK_CONFIG_BACKUP_DISABLE_GIT = os.getenv(
+    'TASK_CONFIG_BACKUP_DISABLE_GIT', False)
 
 # Session backend
 
