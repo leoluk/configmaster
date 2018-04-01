@@ -80,6 +80,9 @@ class DLinkConfigBackupHandler(BaseHandler):
             raise NotImplementedError(
                 "Config filter not implemented for this device type")
 
+        if self.credential.type != self.credential.TYPE_PLAINTEXT:
+            raise ValueError("Invalid credential: needs to be a plain-text password")
+
         login_data = urllib.urlencode({
             "Login": self.credential.username,
             "Password": self.credential.password,

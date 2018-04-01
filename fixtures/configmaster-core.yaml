@@ -8,6 +8,10 @@
   pk: 2
   fields: {type: 1, description: Example login credential, username: admin, password: password,
     path: ''}
+- model: configmaster.credential
+  pk: 3
+  fields: {type: 2, description: OpenShift SSH secret, username: root, password: null,
+    path: /opt/app-root/ssh-secret/ssh-privatekey}
 - model: configmaster.devicetype
   pk: 3
   fields:
