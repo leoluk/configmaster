@@ -18,6 +18,37 @@ ConfigMaster requires Python 2.7.2.
 We recommend either CentOS 7 or Debian 9 for production setups, but you can
 probably make it work on any reasonably recent GNU/Linux distribution.
 
+Debian 8 dependencies:
+
+- python-pip
+- python-dev
+- libmysqlclient-dev
+- libldap-dev
+- libsasl2-dev
+
+Debian 9 dependencies:
+
+- python-pip
+- python-dev
+- libmariadbclient-dev
+- libldap-dev
+- libsasl2-dev
+
+Ubuntu 16.04 dependencies:
+
+- python-pip
+- python-dev
+- libmysqlclient-dev
+- libldap2-dev
+- libsasl2-dev
+
+CentOS 7 dependencies:
+
+- epel-release (this one first, then the others)
+- python-pip
+- openldap-devel
+- python-devel
+
 Python 3 future
 ---------------
 
@@ -50,10 +81,9 @@ plan the migration:
     Python 3.5. Inofficial PPA for 3.6 exists.
 
 *RHEL/CentOS 6 and 7*
-    Red Hat has published a rh-python35 `SCL`_ and is planning to release
-    rh-python36 in Q4. Sounds good.
+    Red Hat has published a rh-python35 and rh-python36 `SCL`_.
 
-*Fedora 26*
+*Fedora 26 and up*
     Python 3.6.
 
 
