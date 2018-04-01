@@ -169,6 +169,15 @@ CMDB_EXPORT_URL = None
 CMDB_CREDENTIALS_URL = None
 CMDB_REDIRECT = None
 
+# SSH
+TASK_CONFIG_BACKUP_SSH_CONFIG = os.getenv(
+    'TASK_CONFIG_BACKUP_SSH_CONFIG',
+    os.path.expanduser('~/.ssh/ssh_config'))
+
+TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS = os.getenv(
+    'TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS',
+    os.path.expanduser('~/.ssh/known_hosts'))
+
 # Session backend
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
