@@ -7,6 +7,11 @@ OpenShift is not yet supported for production.
 This guide assumes a cluster with persistent storage.
 Make sure that the `oc` client is set up for the right project.
 
+Generate SSH key and upload it:
+
+    ssh-keygen -f local/configmaster_dev
+    oc secrets new-sshauth configmaster-ssh --ssh-privatekey=local/configmaster_dev
+
 Create application:
 
     oc create -f openshift/configmaster.yaml | oc create -f

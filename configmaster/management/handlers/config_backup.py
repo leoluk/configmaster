@@ -45,7 +45,7 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         """
         self.connection.connect(
             self.credential.username,
-            self.credential.password,
+            self.credential.get_password_or_private_key(),
             open_command_channel=False,
             open_scp_channel=False)
 
@@ -117,7 +117,9 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         """:type : NetworkDeviceRemoteControl"""
 
         try:
-            connection.connect(self.credential.username, self.credential.password)
+            connection.connect(
+                self.credential.username,
+                self.credential.get_password_or_private_key())
             return connection.get_config_checksum()
         finally:
             connection.close()

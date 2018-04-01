@@ -72,6 +72,20 @@ class Credential(models.Model):
     def __unicode__(self):
         return self.description
 
+    def is_ssh_private_key(self):
+        return self.type == self.TYPE_SSH
+
+    def open_ssh_private_key(self):
+        if not self.is_ssh_private_key():
+            raise ValueError("Not a SSH private key")
+
+        return open(self.path, 'r')
+
+    def get_password_or_private_key(self):
+        if self.is_ssh_private_key():
+            return self.open_ssh_private_key()
+        else:
+            return self.password
 
 class ConnectionSetting(models.Model):
     name = models.CharField(max_length=100)
@@ -274,9 +288,17 @@ class Device(locking.LockMixin, models.Model):
         (STATUS_ERROR, "Error")
     )
 
-    name = models.CharField("Device name", max_length=100, blank=True)
-    label = models.CharField("Device identifier", max_length=200, unique=True)
-    hostname = models.CharField("Host name", max_length=200, blank=True)
+    name = models.CharField(
+        "Device name", max_length=100, blank=True,
+        help_text="Descriptive name (optional)")
+
+    label = models.CharField(
+        "Device identifier", max_length=200, unique=True,
+        help_text="Unique identifier")
+
+    hostname = models.CharField(
+        "Host name", max_length=200, blank=True,
+        help_text="Fully-qualified domain name")
 
     enabled = models.BooleanField("Config management enabled", default=True)
 

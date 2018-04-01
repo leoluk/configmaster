@@ -122,6 +122,9 @@ objects:
         - name: shared-data
           persistentVolumeClaim:
             claimName: ${NAME}-data
+        - name: ssh-key
+          secret:
+            secretName: configmaster-ssh
         containers:
         - env:
           - name: APP_CONFIG
@@ -136,6 +139,10 @@ objects:
             value: ${NAME}-db
           - name: DATABASE_SERVICE_PORT
             value: "3306"
+          - name: TASK_CONFIG_BACKUP_SSH_CONFIG
+            value: /opt/app-root/data/ssh_config
+          - name: TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS
+            value: /opt/app-root/data/ssh_known_hosts
           - name: DJANGO_SECRET_KEY
             valueFrom:
               secretKeyRef:
@@ -163,6 +170,8 @@ objects:
           volumeMounts:
             - name: shared-data
               mountPath: /opt/app-root/data
+            - name: ssh-key
+              mountPath: /opt/app-root/ssh-secret
         restartPolicy: Always
     test: false
     triggers:

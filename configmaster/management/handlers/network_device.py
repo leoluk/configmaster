@@ -44,7 +44,7 @@ class SSHDeviceHandler(BaseHandler):
                       self.device.device_type.connection_setting.use_ssh_config):
             self._fail("Invalid SSH port setting")
 
-        if not self.credential or self.credential.type != Credential.TYPE_PLAINTEXT:
+        if not self.credential:
             self._fail("No valid credential for device")
 
     @contextmanager
@@ -137,8 +137,9 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         Does the SSH login and connection setup. This method can be
         overwritten by descendant classes to customize the login behaviour.
         """
-        self.connection.connect(self.credential.username,
-                                self.credential.password)
+        self.connection.connect(
+            self.credential.username,
+            self.credential.get_password_or_private_key())
 
     @contextmanager
     def run_wrapper(self, *args, **kwargs):

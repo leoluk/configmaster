@@ -13,6 +13,8 @@ import binascii
 from subprocess import list2cmdline
 from paramiko.hostkeys import HostKeys
 from paramiko.ssh_exception import SSHException
+from paramiko.rsakey import RSAKey
+from django.conf import settings
 
 from utils.contrib import scp, pexpect
 
@@ -83,7 +85,11 @@ class SSHRemoteControl(BaseRemoteControl):
         self.hostkey_change_cb = hostkey_change_cb
 
     def _connect_transport(self, transport, username=None, password=None):
-
+        """
+        :param transport: paramiko.Transport instance
+        :param username: SSH username
+        :param password: Either a plain-text password or a file object containing a private key
+        """
         if not username:
             username = self.username
         if not password:
@@ -95,7 +101,7 @@ class SSHRemoteControl(BaseRemoteControl):
             raise ConnectionError("SSH negotiation failed")
 
         hostkeys = HostKeys()
-        hostkey_file = os.path.expanduser('~/.ssh/known_hosts')
+        hostkey_file = settings.TASK_CONFIG_BACKUP_SSH_KNOWN_HOSTS
         hostkeys.load(hostkey_file)
         server_hostkey_name = ("[%s]:%d" % (self.hostname, self.port) if
             self.port != 22 else self.hostname)
@@ -117,7 +123,11 @@ class SSHRemoteControl(BaseRemoteControl):
             hostkeys.save(hostkey_file)
 
         try:
-            transport.auth_password(username, password)
+            try:
+                key = RSAKey.from_private_key(password)
+                transport.auth_publickey(username, key)
+            except AttributeError:
+                transport.auth_password(username, password)
 
             # double check, auth_password should already raise the exception
             if not transport.is_authenticated():
@@ -149,6 +159,16 @@ class SSHRemoteControl(BaseRemoteControl):
 
     def connect(self, username, password, open_command_channel=True,
                 open_scp_channel=False):
+        """
+        Opens the SSH transport and opens channels, if requested.
+
+        open_command_channel and open_scp_channel are mutually inclusive.
+
+        :param username:
+        :param password: Either a plain-text password or a file object containing a private key
+        :param open_command_channel: Open a command (console) channel
+        :param open_scp_channel: Open a SCP channel.
+        """
         self.username = username
         self.password = password
 
