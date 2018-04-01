@@ -10,7 +10,7 @@
     path: ''}
 - model: configmaster.credential
   pk: 3
-  fields: {type: 2, description: OpenShift SSH secret, username: root, password: null,
+  fields: {type: 2, description: OpenShift SSH secret, username: configmaster, password: null,
     path: /opt/app-root/ssh-secret/ssh-privatekey}
 - model: configmaster.devicetype
   pk: 3
@@ -91,6 +91,17 @@
     alternative_config_compare: false
     checksum_config_compare: false
     tasks: []
+- model: configmaster.devicetype
+  pk: 15
+  fields:
+    name: Junos
+    connection_setting: 2
+    credential: 3
+    config_filter: ''
+    version_regex: version (.+?);
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: [3, 7]
 - model: configmaster.repository
   pk: 1
   fields: {name: Network Configs, path: /opt/app-root/data/network-configs}

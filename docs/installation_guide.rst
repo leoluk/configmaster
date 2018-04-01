@@ -190,7 +190,7 @@ command-line syntax and the internal workings of the task runner.
 
     We managed to crash HP ProCurve by doing more than 100000+ SSH logins.
     On the other hand, devices which run a full operating system like
-    FortiGate or JunOS have no such issues and can be queried each hour (or
+    FortiGate or Junos have no such issues and can be queried each hour (or
     in even shorter intervals) without experiencing any issues.
 
     The ProCurve crash would take 12+ years to reproduce with daily runs,

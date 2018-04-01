@@ -1,0 +1,20 @@
+- model: configmaster.devicegroup
+  pk: 1
+  fields: {name: Router, plural: Routers, enabled: true, default_device_type: 15,
+    repository: 1}
+- model: configmaster.device
+  pk: 1
+  fields:
+    name: junos-dev-vmx-16
+    label: junos-dev-vmx-16
+    hostname: junos-dev-vmx-16
+    enabled: true
+    sync: false
+    do_not_use_scp: true
+    credential: null
+    group: 1
+    device_type: 15
+    accept_new_hostkey: false
+    version_info: ''
+    last_checksum: ''
+    known_by_nagios: false

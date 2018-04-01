@@ -18,6 +18,7 @@ from utils.remote.common import GuessingFirewallRemoteControl, RemoteException, 
     NetworkDeviceRemoteControl
 from utils.remote.fortigate import FortigateRemoteControl
 from utils.remote.juniper import JuniperRemoteControl
+from utils.remote.junos import JunosRemoteControl
 from utils.remote.procurve import ProCurveRemoteControl
 from utils.remote.unix import UnixRemoteControl
 
@@ -86,6 +87,7 @@ class NetworkDeviceHandler(SSHDeviceHandler):
         u"HP ProCurve": ProCurveRemoteControl,
         u"Brocade *Iron": BrocadeRemoteControl,
         u"*NIX": UnixRemoteControl,
+        u"Junos": JunosRemoteControl,
     }
 
     def __init__(self, device):

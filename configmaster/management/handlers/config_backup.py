@@ -381,6 +381,10 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
 
         for repository in Repository.objects.all():
             os.chdir(repository.path)
+
+            if not os.path.exists('_ByHostname'):
+                continue
+
             # Clean up broken symlinks
             find('-L', '_ByHostname', '-type', 'l', '-delete')
             git.add('-A', '_ByHostname')
@@ -399,9 +403,13 @@ class NetworkDeviceConfigBackupHandler(NetworkDeviceHandler):
         for device_type in DeviceType.objects.all():
             if not device_type.config_filter:
                 continue
-            filename = os.path.join(
-                Repository.objects.get(id=1).path,
-                'Meta', "{}_filter.txt".format(
+
+            path = os.path.join(Repository.objects.get(id=1).path, 'Meta')
+
+            if not os.path.exists(path):
+                os.mkdir(path)
+
+            filename = os.path.join(path, "{}_filter.txt".format(
                     RE_MATCH_FIRST_WORD.findall(
                         device_type.name.replace(" ", "_"))[0]))
 
