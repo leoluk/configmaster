@@ -16,6 +16,7 @@ from django.http.response import HttpResponseBadRequest, \
 from django.shortcuts import render_to_response, redirect
 from django.utils.timezone import localtime
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, View
 
@@ -26,7 +27,7 @@ from configmaster.management.handlers.password_change import \
 from configmaster.models import Device, Task, DeviceGroup
 
 
-class DashboardView(ListView):
+class DashboardView(LoginRequiredMixin, ListView):
     template_name = 'configmaster/dashboard.html'
     queryset = (Device.objects.order_by('-enabled', 'group', 'name')
                 .prefetch_related("latest_reports")
@@ -41,13 +42,13 @@ class DashboardView(ListView):
         return context
 
 
-class VersionInfoView(ListView):
+class VersionInfoView(LoginRequiredMixin, ListView):
     template_name = 'configmaster/version_info.html'
     queryset = (DeviceGroup.objects.prefetch_related("device_set")
                 .prefetch_related("device_set__device_type"))
 
 
-class DashboardRunView(View):
+class DashboardRunView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         try:
             device = Device.objects.get(label=request.POST['device'])
@@ -71,6 +72,15 @@ class DashboardRunView(View):
 
 class DeviceGetVersionAPIView(View):
     def get(self, request, *args, **kwargs):
+        if not settings.CONFIGMASTER_STATUS_API_KEY:
+            raise SuspiciousOperation('Status API accessed')
+
+        api_key = request.GET['api_key']
+
+        if api_key != settings.CONFIGMASTER_STATUS_API_KEY:
+            return HttpResponseBadRequest(
+                "Invalid API key")
+
         try:
             device = Device.objects.get(label=request.GET['device'])
         except Device.DoesNotExist:
@@ -87,6 +97,15 @@ class DeviceGetVersionAPIView(View):
 
 class DeviceStatusAPIView(View):
     def get(self, request, *args, **kwargs):
+        if not settings.CONFIGMASTER_STATUS_API_KEY:
+            raise SuspiciousOperation('Status API accessed')
+
+        api_key = request.GET['api_key']
+
+        if api_key != settings.CONFIGMASTER_STATUS_API_KEY:
+            return HttpResponseBadRequest(
+                "Invalid API key")
+
         try:
             device = Device.objects.get(label=request.GET['device'])
             task = Task.objects.get(id=request.GET['task'])
