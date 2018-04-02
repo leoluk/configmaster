@@ -113,7 +113,7 @@ objects:
           execNewPod:
             command:
               - fixtures/init_dev.sh
-            containerName: configmaster
+            containerName: ${NAME}
             volumes:
               - shared-data
           failurePolicy: Abort
