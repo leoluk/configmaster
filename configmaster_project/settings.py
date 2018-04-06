@@ -28,6 +28,16 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
+# General
+
+# No default value to prevent accidental usage of hardcoded secrets
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
+if os.getenv('DJANGO_DEBUG'):
+    DEBUG = True
+    ALLOWED_HOSTS = ['*']
+    INTERNAL_IPS = ['127.0.0.1']
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -116,6 +126,10 @@ DATABASES = {
     }
 }
 
+if os.getenv('DATABASE_SERVICE_NAME'):
+    import db_from_env
+    DATABASES['default'] = db_from_env.config()
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
 
@@ -179,5 +193,9 @@ ESXI_FILE_BLACKLIST = (
     'etc/vmware/lunTimestamps.log',
 )
 
-# noinspection PyUnresolvedReferences
-from local_settings import *
+try:
+    # noinspection PyUnresolvedReferences
+    from local_settings import *
+except ImportError:
+    pass
+
