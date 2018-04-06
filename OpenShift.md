@@ -23,4 +23,8 @@ Remote shell in the active pod:
 
     openshift/rsh.sh
 
+Rebuild:
+
+    oc start-build configmaster -F
+
 [1]: https://github.com/openshift/origin

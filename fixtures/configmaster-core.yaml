@@ -1,0 +1,125 @@
+- model: configmaster.connectionsetting
+  pk: 1
+  fields: {name: 'SSH', ssh_port: 22, use_ssh_config: false}
+- model: configmaster.connectionsetting
+  pk: 2
+  fields: {name: 'SSH (use system config)', ssh_port: null, use_ssh_config: true}
+- model: configmaster.credential
+  pk: 2
+  fields: {type: 1, description: Example login credential, username: admin, password: password,
+    path: ''}
+- model: configmaster.devicetype
+  pk: 3
+  fields:
+    name: Juniper SSG
+    connection_setting: 1
+    credential: 2
+    config_filter: "^# saved_cfg_timestamp:\\d+ #+\\s*$\\n\r\n^.*config saved$\\n\r\
+      \n^System config (\\d+ bytes) loaded$\\n\r\n^Done.$\\n\r\n^Total Config size\
+      \ \\d+:$\\n\r\n"
+    version_regex: ''
+    alternative_config_compare: true
+    checksum_config_compare: false
+    tasks: [3, 5, 7]
+- model: configmaster.devicetype
+  pk: 4
+  fields:
+    name: Fortigate
+    connection_setting: 1
+    credential: 2
+    config_filter: ^\s+set last-(?:failed-)?login.+$\n
+    version_regex: '#config-version=(.+):opmode'
+    alternative_config_compare: false
+    checksum_config_compare: true
+    tasks: [3]
+- model: configmaster.devicetype
+  pk: 5
+  fields:
+    name: Unknown firewall type
+    connection_setting: 1
+    credential: 2
+    config_filter: ''
+    version_regex: ''
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: [2]
+- model: configmaster.devicetype
+  pk: 6
+  fields:
+    name: Unknown switch type
+    connection_setting: 2
+    credential: 2
+    config_filter: ''
+    version_regex: ''
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: [4]
+- model: configmaster.devicetype
+  pk: 7
+  fields:
+    name: HP ProCurve
+    connection_setting: 2
+    credential: 2
+    config_filter: ''
+    version_regex: ; (.+) Configuration Editor; Created on release (.+)
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: [3, 5, 7]
+- model: configmaster.devicetype
+  pk: 12
+  fields:
+    name: Brocade *Iron
+    connection_setting: 2
+    credential: 2
+    config_filter: ''
+    version_regex: ver\s+(.+)
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: [3, 5, 7]
+- model: configmaster.devicetype
+  pk: 14
+  fields:
+    name: '*NIX'
+    connection_setting: 2
+    credential: 2
+    config_filter: ''
+    version_regex: ''
+    alternative_config_compare: false
+    checksum_config_compare: false
+    tasks: []
+- model: configmaster.repository
+  pk: 1
+  fields: {name: Network Configs, path: /opt/app-root/data/network-configs}
+- model: configmaster.repository
+  pk: 2
+  fields: {name: Network Configs (Secure), path: /opt/app-root/data/secure-network-configs}
+- model: configmaster.task
+  pk: 1
+  fields: {name: Dummy (base) task, description: '', class_name: BaseHandler, enabled: true,
+    hide_if_successful: false, result_url: null, master_task: null}
+- model: configmaster.task
+  pk: 2
+  fields: {name: Guess firewall type, description: '', class_name: GuessFirewallTypeHandler,
+    enabled: true, hide_if_successful: false, result_url: null, master_task: null}
+- model: configmaster.task
+  pk: 3
+  fields: {name: Config backup, description: '', class_name: NetworkDeviceConfigBackupHandler,
+    enabled: true, hide_if_successful: false, result_url: 'https://git.example.com/{repo}/browse/master/{group_plural}/{label}.txt',
+    master_task: null}
+- model: configmaster.task
+  pk: 4
+  fields: {name: SSH login test, description: '', class_name: SSHLoginTestHandler,
+    enabled: true, hide_if_successful: true, result_url: '', master_task: null}
+- model: configmaster.task
+  pk: 5
+  fields: {name: Compare with startup config, description: '', class_name: NetworkDeviceCompareWithStartupHandler,
+    enabled: true, hide_if_successful: true, result_url: '', master_task: 3}
+- model: configmaster.task
+  pk: 6
+  fields: {name: D-Link DGS config backup, description: '', class_name: DLinkConfigBackupHandler,
+    enabled: true, hide_if_successful: false, result_url: 'https://git.example.com/{repo}/browse/master/{group_plural}/{label}.txt',
+    master_task: null}
+- model: configmaster.task
+  pk: 7
+  fields: {name: NTP check, description: '', class_name: NetworkDeviceNTPHandler,
+    enabled: true, hide_if_successful: false, result_url: '', master_task: 3}

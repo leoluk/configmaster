@@ -1,0 +1,16 @@
+- model: auth.user
+  pk: 1
+  fields:
+    # Password is "admin123!!"
+    password: pbkdf2_sha256$36000$0MBguzWfsa6N$EzVdkVRjZkIxbB5PfwWPKptE6t5gZ1QivRNR2jH01g4=
+    last_login: null
+    is_superuser: true
+    username: admin
+    first_name: ''
+    last_name: ''
+    email: admin@example.com
+    is_staff: true
+    is_active: true
+    date_joined: 2018-04-01 13:04:36.391546+00:00
+    groups: []
+    user_permissions: []
