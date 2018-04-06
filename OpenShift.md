@@ -22,7 +22,7 @@ Live sync (transfer modified files to the pod):
 Remote shell in the active pod:
 
     openshift/rsh.sh
-    
+
 Rebuild:
 
     oc start-build configmaster -F
