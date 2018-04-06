@@ -6,7 +6,7 @@
   fields: {name: 'SSH (use system config)', ssh_port: null, use_ssh_config: true}
 - model: configmaster.credential
   pk: 2
-  fields: {type: 1, description: Fake RADIUS login, username: admin, password: adminadmin,
+  fields: {type: 1, description: Example login credential, username: admin, password: password,
     path: ''}
 - model: configmaster.devicetype
   pk: 3
