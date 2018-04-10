@@ -3,7 +3,7 @@ import pytest
 from django.core.management import call_command
 
 from configmaster.models import Task, DeviceType, Device
-from conftest import config, DUMMY_LABEL
+from conftest import config
 
 
 @pytest.mark.django_db
@@ -13,6 +13,7 @@ def test_juniper_get_version(
         connection_setting,
         device_group,
         juniper,
+        label,
 ):
     task = Task(
         name='Config Compare',
@@ -21,7 +22,6 @@ def test_juniper_get_version(
     task.save()
 
     hostname = juniper['hostname']
-    label = DUMMY_LABEL
     expected_version = juniper['version']
 
     device_type = DeviceType(
