@@ -64,6 +64,9 @@ MIDDLEWARE_CLASSES = (
     'restrictedsessions.middleware.RestrictedSessionsMiddleware'
 )
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 # LDAP auth
 
 AUTH_LDAP_SERVER_URI = 'ldap://[...]'
