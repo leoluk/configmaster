@@ -64,8 +64,6 @@ MIDDLEWARE_CLASSES = (
     'restrictedsessions.middleware.RestrictedSessionsMiddleware'
 )
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
 
 # LDAP auth
 
@@ -202,3 +200,6 @@ try:
 except ImportError:
     pass
 
+if DEBUG == False:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
