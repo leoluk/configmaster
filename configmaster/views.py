@@ -118,7 +118,7 @@ class DeviceStatusAPIView(View):
 
         if report and report.long_output:
             url = reverse('admin:%s_%s_change' %(
-                report._meta.app_label, report._meta.module_name),
+                report._meta.app_label, report._meta.model_name),
                           args=[report.id] )
             url = request.build_absolute_uri(url)
 
