@@ -143,8 +143,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-LOGIN_URL = '/admin/login'
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
@@ -163,10 +161,7 @@ CONFIGMASTER_SECURE_GROUP_PLURAL = "secure-"
 
 CONFIGMASTER_NTP_MAX_DELTA = 5
 
-# API key for password change API (endpoint disabled if unspecified)
-CONFIGMASTER_PW_CHANGE_API_KEY = os.getenv('CONFIGMASTER_PW_CHANGE_API_KEY')
-# API key for device status API (endpoint disabled if unspecified)
-CONFIGMASTER_STATUS_API_KEY = os.getenv('CONFIGMASTER_STATUS_API_KEY')
+CONFIGMASTER_PW_CHANGE_API_KEY = None
 
 # External CMDB settings
 

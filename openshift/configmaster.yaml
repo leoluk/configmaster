@@ -39,11 +39,6 @@ parameters:
   name: VOLUME_CAPACITY
   required: true
   value: 1Gi
-- displayName: API key for status and PW change APIs
-  from: '[a-zA-Z0-9]{16}'
-  generate: expression
-  name: CM_API_KEY
-
 objects:
 
 #------------------------------------------------- Django
@@ -64,7 +59,6 @@ objects:
     name: ${NAME}
   stringData:
     django-secret-key: ${DJANGO_SECRET_KEY}
-    cm-api-key: ${CM_API_KEY}
 - apiVersion: v1
   kind: BuildConfig
   metadata:
@@ -163,16 +157,6 @@ objects:
             valueFrom:
               secretKeyRef:
                 key: django-secret-key
-                name: ${NAME}
-          - name: CONFIGMASTER_PW_CHANGE_API_KEY
-            valueFrom:
-              secretKeyRef:
-                key: cm-api-key
-                name: ${NAME}
-          - name: CONFIGMASTER_STATUS_API_KEY
-            valueFrom:
-              secretKeyRef:
-                key: cm-api-key
                 name: ${NAME}
           - name: DATABASE_NAME
             valueFrom:
