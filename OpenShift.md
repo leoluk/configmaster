@@ -9,7 +9,7 @@ Make sure that the `oc` client is set up for the right project.
 
 Create application:
 
-    oc create -f openshift/configmaster.yaml | oc create -f
+    oc process -f openshift/configmaster.yaml | oc create -f -
 
 Tear down:
 
