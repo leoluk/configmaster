@@ -3,7 +3,7 @@ from django.core.management import call_command
 from django.conf import settings
 
 from configmaster.models import Device, Report
-from conftest import config, DUMMY_LABEL
+from conftest import config
 
 
 def _check_ntp(device):
@@ -35,13 +35,14 @@ def test_ntp_juniper(
         ntp_task,
         device_info,
         device_group,
+        label,
 ):
     device_type = device_type_juniper
     hostname = device_info['hostname']
 
     device_type.tasks.add(ntp_task)
     device = Device(
-        label=DUMMY_LABEL,
+        label=label,
         hostname=hostname,
         group=device_group,
         device_type=device_type,
@@ -59,13 +60,14 @@ def test_ntp_fortigate(
         ntp_task,
         device_info,
         device_group,
+        label,
 ):
     device_type = device_type_fortigate
     hostname = device_info['hostname']
 
     device_type.tasks.add(ntp_task)
     device = Device(
-        label=DUMMY_LABEL,
+        label=label,
         hostname=hostname,
         group=device_group,
         device_type=device_type,
@@ -83,13 +85,14 @@ def test_ntp_procurve(
         ntp_task,
         device_info,
         device_group,
+        label,
 ):
     device_type = device_type_procurve
     hostname = device_info['hostname']
 
     device_type.tasks.add(ntp_task)
     device = Device(
-        label=DUMMY_LABEL,
+        label=label,
         hostname=hostname,
         group=device_group,
         device_type=device_type,

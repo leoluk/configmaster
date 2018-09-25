@@ -2,6 +2,8 @@ import os
 
 import yaml
 import pytest
+from sh import git
+
 from configmaster.models import (
     Credential,
     ConnectionSetting,
@@ -10,9 +12,7 @@ from configmaster.models import (
     Repository,
     Task,
 )
-
-DUMMY_LABEL = 'AA00'
-
+from utils import cleanup_repo
 
 config_path = os.path.join('configmaster_project', 'test_config.yaml')
 with open(config_path) as f:
@@ -44,13 +44,16 @@ def connection_setting():
     return connection_setting
 
 
+
+
 @pytest.fixture
 def repository():
     repo_path = config['repository']['path']
-
+    cleanup_repo(repo_path)
     repository = Repository(
         path=repo_path,
     )
+    repository.id = 1
     repository.save()
     return repository
 
@@ -119,3 +122,11 @@ def ntp_task():
     )
     ntp_task.save()
     return ntp_task
+
+@pytest.fixture
+def label(request):
+    """
+    Returns a dummy label containing the name of the test.
+    """
+    test_name = request.node.name
+    return 'label_for_' + test_name
