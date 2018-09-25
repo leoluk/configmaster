@@ -18,7 +18,7 @@ Generate SSH key and upload it:
 
 Create application:
 
-    oc create -f openshift/configmaster.yaml | oc create -f
+    oc process -f openshift/configmaster.yaml | oc create -f -
 
 Tear down:
 
