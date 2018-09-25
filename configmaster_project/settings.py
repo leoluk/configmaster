@@ -64,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'restrictedsessions.middleware.RestrictedSessionsMiddleware'
 )
 
+
 # LDAP auth
 
 AUTH_LDAP_SERVER_URI = 'ldap://[...]'
@@ -199,3 +200,6 @@ try:
 except ImportError:
     pass
 
+if DEBUG == False:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
