@@ -276,20 +276,21 @@ class Command(BaseCommand):
                     device.lock.acquire()
                     self.stdout.write("Running tasks...")
 
-                    retries = 0
-                    while True:
-                        report, result = self.run_task(device, task)
-                        if ((result == Report.RESULT_FAILURE) and
-                                (retries < settings.CONFIGMASTER_RETRIES) and
-                                (not any(x in report.output for x in
-                                         DO_NOT_RETRY))):
-                            retries += 1
-                            self.stdout.write('Retrying... (%d/%d)' % (
-                                retries, settings.CONFIGMASTER_RETRIES))
-                        else:
-                            break
-
-                    device.lock.release()
+                    try:
+                        retries = 0
+                        while True:
+                            report, result = self.run_task(device, task)
+                            if ((result == Report.RESULT_FAILURE) and
+                                    (retries < settings.CONFIGMASTER_RETRIES) and
+                                    (not any(x in report.output for x in
+                                             DO_NOT_RETRY))):
+                                retries += 1
+                                self.stdout.write('Retrying... (%d/%d)' % (
+                                    retries, settings.CONFIGMASTER_RETRIES))
+                            else:
+                                break
+                    finally:
+                        device.lock.release()
 
 
         # Call run_complete methods of all invoked task handlers
