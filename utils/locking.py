@@ -14,7 +14,6 @@ class FileLock(object):
             "configmaster-lock-"+name.lstrip('/').replace("/", "-")
         )
         self.f = open(filename, 'w')
-        os.chmod(filename, 0o666)
         self.acquired = False
 
     def acquire(self, non_blocking=False):
