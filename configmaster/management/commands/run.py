@@ -4,6 +4,7 @@
 #   Copyright (C) 2013-2016 Continum AG
 #
 
+import os
 import traceback
 
 from django.conf import settings
@@ -204,6 +205,11 @@ class Command(BaseCommand):
         devices = []
         excluded_devices = []
         tasks = []
+
+        if os.geteuid() == 0:
+            self.stderr.write(
+                "This should not be run as root")
+            return
 
         run_lock = locking.FileLock("/run/%d" % hash(args))
         try:
