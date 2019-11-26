@@ -17,6 +17,7 @@ jobs:
         
     - name: Install dependencies
       run: |
+        sudo apt update
         sudo apt install -y libmysqlclient-dev libldap2-dev libsasl2-dev
         python -m pip install --upgrade pip
         pip install -r requirements.txt
