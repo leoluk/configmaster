@@ -7,6 +7,7 @@
 import datetime
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from configmaster.models import Report
 
@@ -25,5 +26,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         Report.objects.filter(
-            date__lte=datetime.datetime.today() - datetime.timedelta(
+            date__lte=timezone.now() - datetime.timedelta(
                 days=7)).delete()
