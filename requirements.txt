@@ -1,4 +1,4 @@
-Django==1.11.3
+Django==1.11.28
 decorator==3.4.0
 django-adminactions==1.5
 django-auth-ldap==1.2.13
