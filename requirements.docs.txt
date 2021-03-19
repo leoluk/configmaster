@@ -2,7 +2,7 @@
 # requirements file.
 
 Babel==2.4.0
-Jinja2==2.9.6
+Jinja2==2.11.3
 MarkupSafe==1.0
 PyYAML==3.12
 Pygments==2.2.0
