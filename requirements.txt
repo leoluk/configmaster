@@ -8,7 +8,7 @@ ecdsa==0.13
 gunicorn==19.8.1
 netaddr==0.7.19
 paramiko==1.16.0
-pyyaml==3.12
+pyyaml==5.4
 requests==2.18.4
 scp==0.10.2
 scpclient==0.7
