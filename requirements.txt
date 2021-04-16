@@ -2,7 +2,7 @@ Django==1.11.3
 decorator==3.4.0
 django-adminactions==1.5
 django-auth-ldap==1.2.13
-django-debug-toolbar==1.8
+django-debug-toolbar==1.11.1
 django-restricted-sessions==0.2.0
 ecdsa==0.13
 gunicorn==19.8.1
