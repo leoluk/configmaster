@@ -1,7 +1,7 @@
 # For security reason, documentation dependencies are not included in the main
 # requirements file.
 
-Babel==2.4.0
+Babel==2.9.1
 Jinja2==2.9.6
 MarkupSafe==1.0
 PyYAML==3.12
