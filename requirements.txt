@@ -7,7 +7,7 @@ django-restricted-sessions==0.2.0
 ecdsa==0.13
 gunicorn==19.8.1
 netaddr==0.7.19
-paramiko==1.16.0
+paramiko==2.10.1
 pyyaml==3.12
 requests==2.18.4
 scp==0.10.2
